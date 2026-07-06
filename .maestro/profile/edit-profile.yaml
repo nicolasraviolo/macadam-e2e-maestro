@@ -1,0 +1,34 @@
+# tags: profile, auth, regression
+#
+# Login → profile (tab avatar) → check name → edit → save → verify on profile.
+#
+# Run: ./scripts/run-profile-edit-test.sh
+#
+# Prerequisites: same as login test (mock :4010, E2E build, Metro, .env credentials).
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/login-with-mock.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- runFlow:
+    file: ../subflows/open-profile-from-tab.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+# Default mock user before edit
+- assertVisible: "E2E"
+
+- assertVisible: "@e2euser"
+
+- runFlow:
+    file: ../subflows/profile-edit-fields.shared.yaml
+    env:
+      APP_ID: ${APP_ID}

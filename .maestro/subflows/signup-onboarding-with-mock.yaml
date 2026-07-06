@@ -1,0 +1,55 @@
+# Sign-up + flags for full onboarding (referral screen enabled).
+# Same as signup-with-mock.yaml but turns on referral_onboarding_enabled.
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+  MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+  MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+---
+- runScript:
+    file: ../scripts/generate-test-account.js
+    env:
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- runScript:
+    file: ../scripts/api/resetScenario.js
+
+- runScript:
+    file: ../scripts/api/update-local-feature-flag.js
+    env:
+      maestro_flags: '{"flags":{"onb_track_notifications_enabled":true,"pre_signup_enabled":true,"personalization_enabled":true,"magic_link_enabled":false,"referral_onboarding_enabled":true}}'
+
+- launchApp:
+    clearState: true
+    # iOS keeps the Firebase auth token in the Keychain (clearState doesn't wipe it);
+    # clearKeychain ensures a logged-out start. iOS-only, ignored on Android.
+    clearKeychain: true
+    permissions:
+      all: deny
+      notifications: allow
+    arguments:
+      flags: '{"onb_track_notifications_enabled":true,"pre_signup_enabled":true,"personalization_enabled":true,"magic_link_enabled":false,"referral_onboarding_enabled":true}'
+
+- runScript:
+    file: ../scripts/wait-for-config.js
+    env:
+      wait_seconds: "4"
+
+- runFlow:
+    file: dismiss-notifications-if-needed.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- runFlow:
+    file: signup-presignup.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- runFlow:
+    file: signup-credentials.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}

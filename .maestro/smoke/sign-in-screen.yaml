@@ -1,0 +1,52 @@
+# tags: smoke
+#
+# What: Logged-out user reaches the sign-in screen (no full login).
+# Why:  Validates navigation + auth UI while custom-token login is blocked on BE/app.
+#
+# Flow: Welcome → Get started → personalization intro → "I already have an account"
+
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    # iOS-only: wipe the Keychain so a prior session's Firebase token is gone.
+    clearKeychain: true
+
+# iOS shows a notifications intro screen before the welcome screen; Android goes
+# straight to welcome. This subflow dismisses notifications ("Later") if present
+# and then waits for the welcome screen ("Get started") on both platforms.
+- runFlow:
+    file: ../subflows/dismiss-notifications-if-needed.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- tapOn: "Get started"
+
+- extendedWaitUntil:
+    visible:
+      id: button.common.lets.go.button
+    timeout: 15000
+
+- tapOn: "(?i)I already have an account"
+
+- assertVisible:
+    id: signIn.title
+
+# The email TextInput exposes different accessibility ids per platform:
+# Android surfaces the inner input testID (common.label.email); iOS surfaces the
+# wrapping container testID (textfield.common.label.email).
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - assertVisible:
+          id: common.label.email
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - assertVisible:
+          id: textfield.common.label.email
+
+- assertVisible:
+    id: button.onboarding.signup.primarycta

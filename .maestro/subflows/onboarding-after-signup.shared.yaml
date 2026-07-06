@@ -1,0 +1,79 @@
+# Post sign-up onboarding: referral → health sync → product tour → submit steps.
+#
+# Cross-platform: health sync differs per OS (Android = Google Fit, iOS = HealthKit),
+# so that part is delegated to platform-specific subflows below.
+#
+# Use testIDs for titles — accent headings render UPPERCASE on screen (text match fails).
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+# --- Referral code screen (both platforms) ---
+- extendedWaitUntil:
+    visible:
+      id: referral.onboarding.submit.title
+    timeout: 45000
+
+- assertVisible:
+    id: referral.onboarding.submit.title
+
+- assertVisible:
+    id: button.referral.onboarding.submit.secondarybutton
+
+- tapOn:
+    id: button.referral.onboarding.submit.secondarybutton
+
+# --- Health sync (platform-specific) ---
+- runFlow:
+    when:
+      platform: Android
+    file: onboarding-health-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- runFlow:
+    when:
+      platform: iOS
+    file: onboarding-health-ios.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+# --- Product tour welcome (both platforms) ---
+- extendedWaitUntil:
+    visible:
+      id: button.common.lets.go.button
+    timeout: 45000
+
+- tapOn:
+    id: button.common.lets.go.button
+
+# --- Product tour: home with submit-steps slider ---
+- extendedWaitUntil:
+    visible:
+      id: onboarding-home-step-1
+    timeout: 30000
+
+- assertVisible:
+    id: onboarding-home-step-1
+
+- tapOn:
+    id: button.common.label.next
+
+- extendedWaitUntil:
+    visible:
+      id: onboarding-home-step-2
+    timeout: 20000
+
+- assertVisible:
+    id: onboarding-home-step-2
+
+# Bottom navigation (fake tab bar on product-tour home)
+- assertVisible:
+    id: home.tabBar.home
+
+# Swipe the submit-steps slider (welcome bonus on product tour)
+- swipe:
+    from:
+      id: onboarding-home-step-2
+    direction: RIGHT

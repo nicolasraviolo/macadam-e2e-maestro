@@ -1,0 +1,23 @@
+# tags: auth, signup, onboarding, probe
+#
+# Faster sign-up onboarding check — stops at "Let's count your steps".
+# Use while iterating on referral / health-sync entry; run full test before merge.
+#
+# Run: ./scripts/run-signup-onboarding-probe-test.sh
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/signup-onboarding-with-mock.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- runFlow:
+    file: ../subflows/onboarding-after-signup-probe.shared.yaml
+    env:
+      APP_ID: ${APP_ID}

@@ -1,0 +1,17 @@
+# Maestro artifacts
+.maestro/tests/
+**/.maestro/tests/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local env (credentials — never commit)
+.env
+.env.*
+
+# App binaries (see builds/README.md)
+builds/*.apk
+builds/*.aab
+builds/*.ipa

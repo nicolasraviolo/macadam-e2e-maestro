@@ -1,0 +1,32 @@
+# tags: auth, signup
+#
+# Creates a fresh @macadam.app account (random email) via password sign-up.
+# Use as a factory for onboarding tests — not asserting full onboarding UI.
+#
+# Success: left sign-up screens (account exists in Firebase + mock API).
+#
+# Before run: mock-server:dev, Metro, E2E build — see README.
+# Run: ./scripts/run-signup-test.sh
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/signup-with-mock.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+# Account created — no longer on sign-up email or password screens
+- extendedWaitUntil:
+    notVisible:
+      id: textfield.email
+    timeout: 45000
+
+- assertNotVisible:
+    id: textfield.email
+- assertNotVisible:
+    id: textfield.password

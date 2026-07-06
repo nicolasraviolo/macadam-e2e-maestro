@@ -1,0 +1,32 @@
+# tags: auth, signup, onboarding, regression
+#
+# Full new-user journey: sign-up → referral → health sync → product tour → submit steps.
+# Ends on the onboarding Home screen with the step-submit slider used.
+#
+# Run: ./scripts/run-signup-onboarding-test.sh
+#
+# Reuses patterns from macadam-app/maestro/e2e/HealthIssues/google-fit.yaml for permissions.
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/signup-onboarding-with-mock.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- runFlow:
+    file: ../subflows/onboarding-after-signup.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+# Still on product-tour home with step slider visible after submit
+- assertVisible:
+    id: onboarding-home-step-2
+
+- assertVisible:
+    id: home.tabBar.home

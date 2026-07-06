@@ -1,0 +1,46 @@
+# Quick post sign-up check: referral screen → activity permission only.
+# Skips Google Fit, product tour, and submit steps (~2 min saved vs full flow).
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible:
+      id: referral.onboarding.submit.title
+    timeout: 45000
+
+- assertVisible:
+    id: referral.onboarding.submit.title
+
+- assertVisible:
+    id: button.referral.onboarding.submit.secondarybutton
+
+- tapOn:
+    id: button.referral.onboarding.submit.secondarybutton
+
+# First health screen differs per platform:
+#   Android → activity recognition ("count your steps")
+#   iOS     → HealthKit provider permission
+# ('when' is only valid on runFlow, so gate the assert via inline runFlow commands.)
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: healthSync.activityPermission.title
+          timeout: 20000
+      - assertVisible:
+          id: healthSync.activityPermission.title
+
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: healthSync.providerPermission.title
+          timeout: 20000
+      - assertVisible:
+          id: healthSync.providerPermission.title

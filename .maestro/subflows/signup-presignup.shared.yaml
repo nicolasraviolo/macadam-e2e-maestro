@@ -1,0 +1,127 @@
+# UI steps: welcome → personalization → sign-up email screen.
+# Does not enter credentials — use signup-credentials.shared.yaml next.
+#
+# Requires magic_link_enabled: false (password sign-up path after personalization).
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible: "Get started"
+    timeout: 30000
+
+- tapOn:
+    id: onboarding.presignup.welcome.getStarted
+
+- extendedWaitUntil:
+    visible:
+      id: button.common.lets.go.button
+    timeout: 15000
+
+- tapOn:
+    id: button.common.lets.go.button
+
+# Username slide.
+# On iOS this slide collapses into a single accessibility blob (no addressable
+# field/button testIDs). The input auto-focuses on entry and its return key is
+# "next" (onSubmitEditing advances), so we type and press Enter instead.
+# TODO (app team): expose accessibility on personalization slides (the animated
+# Maki/PageSlider wrapper collapses children) so iOS can use testIDs like Android.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: onboarding.personalization.username.field.label
+          timeout: 15000
+      - tapOn:
+          id: onboarding.personalization.username.field.label
+      - inputText: "E2EUser"
+      - tapOn:
+          id: button.onboarding.personalization.username.button.label
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "(?i).*your first name.*"
+          timeout: 15000
+      - inputText: "E2EUser"
+      - pressKey: Enter
+
+# Country slide (defaults to FR once loaded)
+- extendedWaitUntil:
+    visible:
+      id: button.common.button.confirm
+    timeout: 20000
+
+- tapOn:
+    id: button.common.button.confirm
+
+# Goals slide — selecting a goal auto-advances
+- extendedWaitUntil:
+    visible: "Track my steps"
+    timeout: 15000
+
+- tapOn: "Track my steps"
+
+# Permissions slide (onb_track_notifications_enabled: true)
+- extendedWaitUntil:
+    visible:
+      id: button.common.button.continue
+    timeout: 15000
+
+- tapOn:
+    id: button.common.button.continue
+
+# iOS: tapping Continue on the permissions slide triggers an App Tracking
+# Transparency flow. With tracking denied the app shows its own "Open Settings"
+# dialog (Cancel / Open settings) with a variable, sometimes long delay. Poll:
+# dismiss the dialog ("Cancel") and advance the success screen ("Continue") until
+# the signup email field appears. (Android has no ATT, so it's handled below.)
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - repeat:
+          times: 25
+          while:
+            notVisible:
+              id: textfield.email
+          commands:
+            # The ATT dialog's dismiss button is "Cancel" or "Later" depending on
+            # tracking state; never tap "Open settings".
+            - tapOn:
+                text: "Cancel"
+                optional: true
+            - tapOn:
+                text: "Later"
+                optional: true
+            # Advance the permissions + "Macadam respects your privacy" (IDFA) screens.
+            - tapOn:
+                text: "Continue"
+                optional: true
+            - runScript:
+                file: ../scripts/wait-for-config.js
+                env:
+                  wait_seconds: "1"
+
+# Android: success screen (~3s) + optional IDFA / privacy prompt before Signup
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runScript:
+          file: ../scripts/wait-for-config.js
+          env:
+            wait_seconds: "2"
+      - tapOn:
+          text: "Continue"
+          optional: true
+
+- extendedWaitUntil:
+    visible:
+      id: textfield.email
+    timeout: 35000

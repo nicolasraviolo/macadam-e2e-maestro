@@ -1,0 +1,53 @@
+# Reusable login with mock server (password path).
+# Use from feature tests via runFlow after mock-server:dev is running.
+#
+# Prerequisites:
+#   - Mock server on localhost:4010 (adb reverse tcp:4010 tcp:4010 on emulator)
+#   - App built with E2E_TESTING=true in macadam-app/.env.development
+#   - Metro running for dev builds
+#
+# Env:
+#   MAESTRO_EMAIL, MAESTRO_PASSWORD
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+  MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+  MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+---
+- runScript:
+    file: ../scripts/api/resetScenario.js
+
+- runScript:
+    file: ../scripts/api/update-local-feature-flag.js
+    env:
+      maestro_flags: '{"flags":{"onb_track_notifications_enabled":true,"pre_signup_enabled":true,"personalization_enabled":true,"magic_link_enabled":false}}'
+
+- launchApp:
+    clearState: true
+    # iOS keeps the Firebase auth token in the Keychain, which clearState does NOT
+    # wipe — so without this the app would relaunch already logged in. clearKeychain
+    # is iOS-only and ignored on Android.
+    clearKeychain: true
+    permissions:
+      all: deny
+      notifications: allow
+    arguments:
+      flags: '{"onb_track_notifications_enabled":true,"pre_signup_enabled":true,"personalization_enabled":true,"magic_link_enabled":false}'
+
+- runScript:
+    file: ../scripts/wait-for-config.js
+    env:
+      wait_seconds: "4"
+
+- runFlow:
+    file: dismiss-notifications-if-needed.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- runFlow:
+    file: login-password.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}

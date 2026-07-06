@@ -1,0 +1,8 @@
+# Dismiss Google Fit OAuth WebView on emulator (SKIP screen → back → product tour).
+appId: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible: "SKIP"
+    timeout: 15000
+
+- back

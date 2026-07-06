@@ -1,0 +1,17 @@
+# Wait for welcome screen, dismissing notifications onboarding if it appears first.
+# Dev builds can take 20–40s to load after clearState.
+
+appId: ${APP_ID}
+---
+- repeat:
+    times: 15
+    while:
+      notVisible: "Get started"
+    commands:
+      - tapOn:
+          text: "Later"
+          optional: true
+
+- extendedWaitUntil:
+    visible: "Get started"
+    timeout: 10000
