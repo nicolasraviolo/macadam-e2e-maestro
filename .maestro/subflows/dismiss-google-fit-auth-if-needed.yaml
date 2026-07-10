@@ -5,4 +5,8 @@ appId: ${APP_ID}
     visible: "SKIP"
     timeout: 15000
 
+- tapOn:
+    text: "SKIP"
+    optional: true
+
 - back

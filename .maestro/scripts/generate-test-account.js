@@ -10,8 +10,14 @@
  */
 
 var DEFAULT_PASSWORD = "Test123!";
+var forceFresh =
+  FORCE_FRESH_ACCOUNT === "true" || FORCE_FRESH_ACCOUNT === true;
 
-if (MAESTRO_EMAIL && String(MAESTRO_EMAIL).trim() !== "") {
+if (
+  !forceFresh &&
+  MAESTRO_EMAIL &&
+  String(MAESTRO_EMAIL).trim() !== ""
+) {
   output.MAESTRO_EMAIL = String(MAESTRO_EMAIL).trim();
   console.log("Using provided email: " + output.MAESTRO_EMAIL);
 } else {

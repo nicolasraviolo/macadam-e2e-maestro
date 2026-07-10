@@ -40,19 +40,34 @@ env:
       APP_ID: ${APP_ID}
 
 # --- Product tour welcome (both platforms) ---
-- extendedWaitUntil:
-    visible:
-      id: button.common.lets.go.button
-    timeout: 45000
+# Poll until product-tour Home — tap welcome CTA when it appears (typewriter delay on emulator).
+- repeat:
+    times: 40
+    while:
+      notVisible:
+        id: onboarding-home-step-1
+    commands:
+      - tapOn:
+          id: button.common.lets.go.button
+          optional: true
 
-- tapOn:
-    id: button.common.lets.go.button
+      - tapOn:
+          text: "Later"
+          optional: true
 
-# --- Product tour: home with submit-steps slider ---
+      - tapOn:
+          text: "I don't want to count my steps"
+          optional: true
+
+      - runScript:
+          file: ../scripts/wait-for-config.js
+          env:
+            wait_seconds: "3"
+
 - extendedWaitUntil:
     visible:
       id: onboarding-home-step-1
-    timeout: 30000
+    timeout: 90000
 
 - assertVisible:
     id: onboarding-home-step-1
@@ -77,3 +92,43 @@ env:
     from:
       id: onboarding-home-step-2
     direction: RIGHT
+
+- runFlow:
+    file: dismiss-success-slider-if-needed.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+# --- Product tour continues: wallet + spend tabs ---
+- extendedWaitUntil:
+    visible:
+      id: onboarding-home-step-3
+    timeout: 30000
+
+- assertVisible:
+    id: onboarding-home-step-3
+
+- tapOn:
+    id: button.common.label.next
+
+- extendedWaitUntil:
+    visible:
+      id: onboarding-home-step-4
+    timeout: 20000
+
+- assertVisible:
+    id: onboarding-home-step-4
+
+- tapOn: "Got it"
+
+# --- End product tour → real Home ---
+- extendedWaitUntil:
+    visible: "(?i).*step count for today.*"
+    timeout: 30000
+
+- tapOn:
+    id: button.common.lets.go.button
+
+- extendedWaitUntil:
+    visible:
+      id: button_user_picture
+    timeout: 45000

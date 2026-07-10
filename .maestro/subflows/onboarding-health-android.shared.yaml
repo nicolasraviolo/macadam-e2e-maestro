@@ -37,18 +37,8 @@ env:
     id: account_name
     optional: true
 
-# Fast path: Fit already connected or account picker succeeded
-- extendedWaitUntil:
-    visible:
-      id: button.common.lets.go.button
-    timeout: 5000
-    optional: true
-
-# Emulator: Google OAuth WebView (SKIP) — cancel and return to Macadam
+# Emulator recovery (OAuth WebView + Fit error modal + permission help)
 - runFlow:
-    when:
-      notVisible:
-        id: button.common.lets.go.button
-    file: dismiss-google-fit-auth-if-needed.yaml
+    file: finish-onboarding-health-android.shared.yaml
     env:
       APP_ID: ${APP_ID}

@@ -1,0 +1,24 @@
+# Dismiss SubmitStepsModal / SuccessSlider when visible (product tour or step conversion).
+# Safe to call when the modal is not shown — optional taps do nothing harmful.
+#
+# The close control is an X icon (CloseButton) — no visible "Close" label on iOS.
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+# Top-right X on success slides / modals (PageSliderHeader close button).
+- tapOn:
+    point: "93%, 8%"
+    optional: true
+
+- runFlow:
+    when:
+      visible: "Close"
+    commands:
+      - tapOn: "Close"
+
+# Some slides use a text CTA instead of the X.
+- tapOn:
+    text: "(?i)(Continue|Done|Got it)"
+    optional: true

@@ -1,17 +1,18 @@
-# Wait for welcome screen, dismissing notifications onboarding if it appears first.
-# Dev builds can take 20–40s to load after clearState.
+# Dispatcher for flows not yet split per platform (signup, regression).
+# iOS/Android run scripts use *-ios.yaml / *-android.yaml directly instead.
 
 appId: ${APP_ID}
 ---
-- repeat:
-    times: 15
-    while:
-      notVisible: "Get started"
-    commands:
-      - tapOn:
-          text: "Later"
-          optional: true
+- runFlow:
+    when:
+      platform: iOS
+    file: dismiss-notifications-if-needed-ios.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
 
-- extendedWaitUntil:
-    visible: "Get started"
-    timeout: 10000
+- runFlow:
+    when:
+      platform: Android
+    file: dismiss-notifications-if-needed-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}

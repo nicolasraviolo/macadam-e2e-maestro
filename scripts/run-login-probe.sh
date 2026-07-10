@@ -17,6 +17,18 @@ METRO_URL="${METRO_URL:-http://localhost:8081/status}"
 MOCK_HEALTH_URL="${MOCK_HEALTH_URL:-http://localhost:4010/test/health}"
 ADB="$ANDROID_HOME/platform-tools/adb"
 
+if [ -f "$REPO_ROOT/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$REPO_ROOT/.env"
+  set +a
+fi
+
+if [ -z "${MAESTRO_EMAIL:-}" ]; then
+  echo "❌ MAESTRO_EMAIL is not set — add it to .env"
+  exit 1
+fi
+
 if ! curl -sf "$MOCK_HEALTH_URL" >/dev/null 2>&1; then
   echo "❌ Mock server is not running on :4010"
   echo "   Start it: cd ~/macadam-app && yarn mock-server:dev"
@@ -58,4 +70,6 @@ echo "Running login probe on $UDID ..."
 cd "$REPO_ROOT"
 maestro test --udid "$UDID" \
   -e APP_ID="${APP_ID:-com.macadamapp.beta}" \
+  -e MAESTRO_EMAIL="${MAESTRO_EMAIL}" \
+  -e MAESTRO_PASSWORD="${MAESTRO_PASSWORD:-Test123!}" \
   .maestro/auth/login-password-probe.yaml

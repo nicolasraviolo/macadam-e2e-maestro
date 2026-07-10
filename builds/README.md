@@ -67,6 +67,32 @@ yarn ios                # builds + installs on iOS simulator/device
 
 After this, the app is installed. Maestro finds it by `appId` (see table above).
 
+#### Build a specific version (for Maestro regression)
+
+Use `scripts/build-app-at-version.sh` from **this** repo. It does two things:
+
+1. **Checks out the code** at tag `vX.Y.Z` or branch `release/X.Y.Z` in `macadam-app`
+2. **Temporarily patches** `app.json` so the installed app shows that version number
+
+The `app.json` change is **never committed** — the script restores it when it finishes.
+
+```bash
+# Released version (tag exists)
+~/Desktop/macadam-e2e-maestro/scripts/build-app-at-version.sh 8.3.1 android
+
+# 8.4.0 — no git tag yet; team builds from dev via CI (VERSION=8.4.0)
+ALLOW_DEV_FALLBACK=1 ~/Desktop/macadam-e2e-maestro/scripts/build-app-at-version.sh 8.4.0 android
+
+# iOS (needs Xcode 26.2 + simulator)
+SIM_NAME="iPhone 15" ALLOW_DEV_FALLBACK=1 ~/Desktop/macadam-e2e-maestro/scripts/build-app-at-version.sh 8.4.0 ios
+```
+
+**Prerequisites:** Android emulator running (Pixel_7). The script auto-detects it.
+
+**Important:** changing `app.json` only sets the version *label*. The actual app code
+(features, fixes, UI) comes from the git checkout. Versions like **8.4.0** that exist
+only as CI builds (no `v8.4.0` tag) use `ALLOW_DEV_FALLBACK=1` → code from `origin/dev`.
+
 ---
 
 ### Option 2 — Copy a debug APK here (Android only)

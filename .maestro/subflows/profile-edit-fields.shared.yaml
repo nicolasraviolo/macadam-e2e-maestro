@@ -1,80 +1,19 @@
-# Edit profile fields and save. Caller must be on Profile overview.
-#
-# Values come from generate-profile-values.js via output.* (Maestro requires the
-# output. prefix — ${PROFILE_FIRSTNAME} alone resolves to the literal "undefined").
-#
-# TODO (app team): add testID on profile edit (pen) button — using tap point for now.
+# Dispatcher — prefer profile-edit-fields-ios.shared.yaml or -android.shared.yaml.
 
 appId: ${APP_ID}
 env:
   APP_ID: ${APP_ID}
 ---
-- runScript:
-    file: ../scripts/generate-profile-values.js
-
-# Pen icon — top-right header (left of settings gear). No testID yet, so we tap by
-# coordinate, which differs per platform (header height/insets differ on iOS).
-- runFlow:
-    when:
-      platform: Android
-    commands:
-      - tapOn:
-          point: "84%, 7%"
 - runFlow:
     when:
       platform: iOS
-    commands:
-      - tapOn:
-          point: "80%, 10%"
+    file: profile-edit-fields-ios.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
 
-- extendedWaitUntil:
-    visible:
-      id: textfield.firstname
-    timeout: 15000
-
-- tapOn:
-    id: textfield.firstname
-- eraseText
-- inputText: ${output.PROFILE_FIRSTNAME}
-
-- tapOn:
-    id: textfield.lastname
-- eraseText
-- inputText: ${output.PROFILE_LASTNAME}
-
-- tapOn:
-    id: textfield.pseudo
-- eraseText
-- inputText: ${output.PROFILE_PSEUDO}
-
-- tapOn:
-    id: textfield.city
-- eraseText
-- inputText: ${output.PROFILE_CITY}
-
-# Dismiss the keyboard so "Save" (bottom) is reachable. hideKeyboard works on
-# Android; on iOS it's unsupported, so tap an empty gap between fields (the RN
-# ScrollView blurs the input on a background tap), which reveals the Save button.
 - runFlow:
     when:
       platform: Android
-    commands:
-      - hideKeyboard
-- runFlow:
-    when:
-      platform: iOS
-    commands:
-      - tapOn:
-          point: "50%, 17%"
-
-- tapOn: "Save"
-
-- extendedWaitUntil:
-    visible: "Overview"
-    timeout: 20000
-
-- assertVisible: ${output.PROFILE_FIRSTNAME}
-
-- assertVisible: "@${output.PROFILE_PSEUDO}"
-
-- assertVisible: ${output.PROFILE_CITY}
+    file: profile-edit-fields-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}

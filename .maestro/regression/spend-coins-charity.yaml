@@ -1,0 +1,55 @@
+# tags: regression, offers, charity
+# qase: MACADAM-300
+#
+# What: Spend tab shows the Charities section (or charities list when opened).
+# Why:  Regression for charity donation entry point.
+#
+# Note: Charity cards need /offers/pools data — without mock API, asserts Spend + Charities label only.
+#
+# Run: ./scripts/run-spend-coins-charity-test.sh
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/login-with-mock.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- extendedWaitUntil:
+    visible:
+      id: button_user_picture
+    timeout: 30000
+
+- tapOn:
+    id: home.tabBar.offers
+
+- extendedWaitUntil:
+    visible:
+      id: offers.title
+    timeout: 20000
+
+- assertVisible:
+    id: offers.title
+
+# Charities carousel header on Spend (hidden when pools API is empty)
+- scrollUntilVisible:
+    element: "Charities"
+    direction: DOWN
+    timeout: 20000
+    optional: true
+
+- runFlow:
+    when:
+      visible: "Charities"
+    commands:
+      - assertVisible: "Charities"
+      - tapOn: "See all"
+      - extendedWaitUntil:
+          visible: "Charities"
+          timeout: 20000
+      - assertVisible: "Charities"

@@ -1,0 +1,62 @@
+# tags: regression, home, wallet
+# qase: MACADAM-272, MACADAM-273, MACADAM-275
+#
+# What: Convert steps → coins, streak activates, wallet balance updates.
+# Why:  Core earning loop for existing users.
+#
+# Run: ./scripts/run-convert-steps-test.sh
+#
+# NOTE: The slide button needs unconverted steps from the health provider.
+# On emulators this is often 0 unless step-system debug is enabled in the app.
+# TODO (app team): E2E launch arg to enable stepSystemDebugEnabled + debugCurrentSteps.
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/login-with-mock.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- extendedWaitUntil:
+    visible: "Validate my steps"
+    timeout: 45000
+
+- assertVisible: "Validate my steps"
+
+# Slide-to-validate needs ~95% travel — short swipes on the label alone may not trigger.
+- swipe:
+    start: "12%, 88%"
+    end: "92%, 88%"
+
+- runScript:
+    file: ../scripts/wait-for-config.js
+    env:
+      wait_seconds: "3"
+
+- runFlow:
+    file: ../subflows/dismiss-success-slider-if-needed.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+# Conversion succeeded when the slider CTA is gone (mock sets streak counter to 1).
+- extendedWaitUntil:
+    notVisible: "Validate my steps"
+    timeout: 45000
+
+# Open wallet via coin balance area — tap top coin chip region
+# TODO (app team): testID on CoinChip / wallet entry
+- tapOn:
+    point: "18%, 9%"
+
+- extendedWaitUntil:
+    visible:
+      id: balance.account.label
+    timeout: 20000
+
+- assertVisible:
+    id: balance.account.label

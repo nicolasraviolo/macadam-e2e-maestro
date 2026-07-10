@@ -133,4 +133,4 @@ run_maestro_and_exit maestro test --udid "$UDID" \
   -e APP_ID="${APP_ID:-com.macadamapp.beta}" \
   -e MAESTRO_EMAIL="${MAESTRO_EMAIL}" \
   -e MAESTRO_PASSWORD="$MAESTRO_PASSWORD" \
-  .maestro/auth/login-password.yaml
+  .maestro/auth/login-password-android.yaml

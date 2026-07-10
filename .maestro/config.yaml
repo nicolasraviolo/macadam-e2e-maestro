@@ -10,3 +10,13 @@
 env:
   # Beta / preprod build (Android default for local E2E)
   APP_ID: com.macadamapp.beta
+
+# Platform-specific smoke flows (see *-ios.yaml / *-android.yaml).
+# Run scripts invoke each platform file separately — not the whole smoke/ folder.
+executionOrder:
+  continueOnFailure: true
+  flowsOrder:
+    - smoke/app-launches-ios
+    - smoke/app-launches-android
+    - smoke/sign-in-screen-ios
+    - smoke/sign-in-screen-android

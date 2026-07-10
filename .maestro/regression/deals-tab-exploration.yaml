@@ -1,0 +1,48 @@
+# tags: regression, offers
+# qase: MACADAM-298, MACADAM-299
+#
+# What: Spend tab loads and shows the offers wall layout (free offers / games section when API data exists).
+# Why:  Regression for Spend navigation and offers wall entry.
+#
+# Note: Full game/survey cards need /offers/free from mock or preprod — this flow asserts the Spend shell.
+#
+# Run: ./scripts/run-deals-tab-exploration-test.sh
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/login-with-mock.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- extendedWaitUntil:
+    visible:
+      id: button_user_picture
+    timeout: 30000
+
+- tapOn:
+    id: home.tabBar.offers
+
+- extendedWaitUntil:
+    visible:
+      id: offers.title
+    timeout: 20000
+
+- assertVisible:
+    id: offers.title
+
+# Free offers / games wall — optional when API returns no free offers
+- runFlow:
+    when:
+      visible: "See all"
+    commands:
+      - scrollUntilVisible:
+          element: "See all"
+          direction: DOWN
+          timeout: 15000
+      - assertVisible: "See all"

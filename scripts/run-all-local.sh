@@ -15,8 +15,10 @@
 # Optional — also run fresh sign-up (~3–5 min extra per platform):
 #   INCLUDE_SIGNUP=1 ./scripts/run-all-local.sh
 #
-# Child scripts shut down emulator/simulator when each phase finishes (pass or
-# fail). To keep devices open while debugging: SHUTDOWN_AFTER=0 ./scripts/run-all-local.sh
+# Child scripts normally shut down the emulator/simulator when each phase finishes.
+# The suite keeps devices running between phases (SHUTDOWN_AFTER=0) so smoke → login
+# → profile reuse the same booted device. Set SHUTDOWN_AFTER=1 to shut down once at
+# the very end; set SHUTDOWN_AFTER=0 (default) to leave devices open for debugging.
 #
 # For auth tests, start these first (two separate terminals):
 #   cd ~/macadam-app && yarn mock-server:dev
@@ -31,7 +33,9 @@ MOCK_HEALTH_URL="${MOCK_HEALTH_URL:-http://localhost:4010/test/health}"
 METRO_URL="${METRO_URL:-http://localhost:8081/status}"
 INCLUDE_SIGNUP="${INCLUDE_SIGNUP:-0}"
 PLATFORM="${PLATFORM:-both}"
-export SHUTDOWN_AFTER="${SHUTDOWN_AFTER:-1}"
+# Keep emulator/simulator alive between suite phases; optional shutdown once at end.
+SUITE_SHUTDOWN_AFTER="${SHUTDOWN_AFTER:-0}"
+export SHUTDOWN_AFTER=0
 
 PASSED=()
 FAILED=()
@@ -147,6 +151,7 @@ run_sequential_step() {
 }
 
 print_summary() {
+  shutdown_devices_at_end
   print_header "Summary"
   if [ "${#PASSED[@]}" -gt 0 ]; then
     echo "Passed (${#PASSED[@]}):"
@@ -180,6 +185,32 @@ want_android() {
 
 want_ios() {
   [ "$PLATFORM" = "ios" ] || [ "$PLATFORM" = "both" ]
+}
+
+shutdown_devices_at_end() {
+  if [ "$SUITE_SHUTDOWN_AFTER" != "1" ]; then
+    return 0
+  fi
+  if want_android; then
+    local adb="${ANDROID_HOME:-$HOME/Library/Android/sdk}/platform-tools/adb"
+    local udid
+    udid="$("$adb" devices 2>/dev/null | awk '/^emulator-.*device/{print $1; exit}')"
+    if [ -n "$udid" ]; then
+      echo ""
+      echo "Shutting down Android emulator ($udid)…"
+      "$adb" -s "$udid" emu kill 2>/dev/null || true
+    fi
+  fi
+  if want_ios && ios_available; then
+    local udid
+    udid="$(xcrun simctl list devices booted 2>/dev/null \
+      | grep -Eo '\([0-9A-F-]{36}\)' 2>/dev/null | head -1 | tr -d '()' || true)"
+    if [ -n "$udid" ]; then
+      echo ""
+      echo "Shutting down iOS simulator ($udid)…"
+      xcrun simctl shutdown "$udid" 2>/dev/null || true
+    fi
+  fi
 }
 
 trap cleanup_logs EXIT
@@ -296,7 +327,7 @@ if want_android; then
 fi
 if want_ios && ios_available; then
   run_parallel_step "login-ios" \
-    env FLOW=.maestro/auth/login-password.yaml "$SCRIPT_DIR/run-ios-tests.sh"
+    env REFRESH_IOS_DRIVER=1 FLOW=.maestro/auth/login-password-ios.yaml "$SCRIPT_DIR/run-ios-tests.sh"
 fi
 
 if want_android; then
@@ -314,7 +345,7 @@ if want_android; then
 fi
 if want_ios && ios_available; then
   run_sequential_step "Profile edit (iOS)" \
-    env FLOW=.maestro/profile/edit-profile.yaml "$SCRIPT_DIR/run-ios-tests.sh" || true
+    env REFRESH_IOS_DRIVER=1 FLOW=.maestro/profile/edit-profile-ios.yaml "$SCRIPT_DIR/run-ios-tests.sh" || true
 fi
 set -e
 

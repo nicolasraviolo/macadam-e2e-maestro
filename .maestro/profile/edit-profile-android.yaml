@@ -1,6 +1,6 @@
 # tags: profile, auth, regression
 #
-# Backward compatibility — prefer profile/edit-profile-android.yaml or -ios.yaml.
+# What: Android — login → profile → edit → save → verify.
 # Run: ./scripts/run-profile-edit-test.sh
 
 appId: ${APP_ID}

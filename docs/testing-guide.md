@@ -59,16 +59,27 @@ These work today but predate the `.shared.yaml` rule:
 
 | Tag | Flow | Qase | Needs mock? | Needs login? |
 |-----|------|------|-------------|--------------|
-| `smoke` | `smoke/app-launches.yaml` | — | No | No |
-| `smoke` | `smoke/sign-in-screen.yaml` | — | No | No |
-| `auth` | `auth/login-password.yaml` | — | Yes | Yes (password) |
+| `smoke` | `smoke/app-launches-ios.yaml` / `app-launches-android.yaml` | — | No | No |
+| `smoke` | `smoke/sign-in-screen-ios.yaml` / `sign-in-screen-android.yaml` | — | No | No |
+| `auth` | `auth/login-password-ios.yaml` / `login-password-android.yaml` | — | Yes | Yes (password) |
 | `auth`, `probe` | `auth/login-password-probe.yaml` | — | Yes | No (stops at password field) |
 | `profile`, `auth` | `profile/edit-profile.yaml` | 302 (partial) | Yes | Yes (password) |
 | `auth`, `signup` | `auth/signup-fresh-account.yaml` | — | Yes | Creates new account |
-| `auth`, `signup`, `onboarding`, `regression` | `auth/signup-onboarding-to-home.yaml` | 269 | Yes | Sign-up through submit-steps slider |
+| `auth`, `signup`, `onboarding`, `regression` | `auth/signup-onboarding-to-home.yaml` | 269, 270, 277 | Yes | Sign-up through full product tour → real Home |
 | `auth`, `signup`, `onboarding`, `probe` | `auth/signup-onboarding-probe.yaml` | — | Yes | Sign-up through activity permission only |
 
 **Working login account (local):** stored in `.env` as `MAESTRO_EMAIL` / `MAESTRO_PASSWORD`.
+
+### Phase 1 regression (new)
+
+| Tag | Flow | Qase | Run script |
+|-----|------|------|------------|
+| `regression` | `regression/tab-navigation.yaml` | 305 | `./scripts/run-tab-navigation-test.sh` |
+| `regression`, `profile` | `regression/view-profile.yaml` | 301 | `./scripts/run-view-profile-test.sh` |
+| `regression`, `profile` | `regression/open-settings.yaml` | 304 | `./scripts/run-open-settings-test.sh` |
+| `regression`, `wallet` | `regression/convert-steps-wallet-streak.yaml` | 272–275 | `./scripts/run-convert-steps-test.sh` |
+| `regression`, `offers` | `regression/deals-tab-exploration.yaml` | 298, 299 | `./scripts/run-deals-tab-exploration-test.sh` |
+| `regression`, `offers` | `regression/spend-coins-charity.yaml` | 300 | `./scripts/run-spend-coins-charity-test.sh` |
 
 ---
 
@@ -80,19 +91,19 @@ Source: Qase export `MACADAM-2026-07-06.csv` (suite: Smoke test).
 |------|-------|------------|-------------|-------|
 | 269 | Complete onboarding (new user) | ✅ Covered | `auth/signup-onboarding-to-home.yaml` | — |
 | 302 | Profile — new user | ✅ Partial | `profile/edit-profile.yaml` | — |
-| 270 | Product tour (new users only) | 📋 Planned | extend `signup-onboarding-to-home.yaml` | 1 |
-| 277 | Slomo not active until XP tap | 📋 Planned | extend `signup-onboarding-to-home.yaml` | 1 |
-| 305 | Tab navigation | 📋 Planned | `smoke/tab-navigation.yaml` | 1 |
-| 301 | Profile — existing user | 📋 Planned | `regression/view-profile.yaml` | 1 |
-| 304 | Settings | 📋 Planned | `regression/open-settings.yaml` | 1 |
-| 272 | Convert steps to coins | 📋 Planned | `regression/convert-steps-wallet-streak.yaml` | 1 |
-| 273 | Streak after conversion | 📋 Planned | ↑ same flow | 1 |
-| 275 | Coin balance after earning | 📋 Planned | ↑ same flow | 1 |
+| 270 | Product tour (new users only) | ✅ Implemented | extend `signup-onboarding-to-home.yaml` | 1 |
+| 277 | Slomo not active until XP tap | ✅ Implemented | extend `signup-onboarding-to-home.yaml` | 1 |
+| 305 | Tab navigation | ✅ Implemented | `regression/tab-navigation.yaml` | 1 |
+| 301 | Profile — existing user | ✅ Implemented | `regression/view-profile.yaml` | 1 |
+| 304 | Settings | ✅ Implemented | `regression/open-settings.yaml` | 1 |
+| 272 | Convert steps to coins | ⚠️ Implemented | `regression/convert-steps-wallet-streak.yaml` | 1 |
+| 273 | Streak after conversion | ⚠️ Implemented | ↑ same flow | 1 |
+| 275 | Coin balance after earning | ⚠️ Implemented | ↑ same flow | 1 |
 | 274 | Streak during product tour | 📋 Planned | extend onboarding subflow | 2 |
 | 276 | XP after conversion (Slomo) | 📋 Planned | `regression/xp-after-conversion.yaml` | 2 |
-| 298 | Open offers wall | 📋 Planned | `regression/deals-tab-exploration.yaml` | 2 |
-| 299 | Games and surveys | 📋 Planned | ↑ same flow | 2 |
-| 300 | Spend coins (charity) | 📋 Planned | `regression/spend-coins-donation.yaml` | 2 |
+| 298 | Open offers wall | ✅ Implemented | `regression/deals-tab-exploration.yaml` | 2 |
+| 299 | Games and surveys | ✅ Implemented | ↑ same flow (See all when API has data) | 2 |
+| 300 | Spend coins (charity) | ✅ Implemented | `regression/spend-coins-charity.yaml` | 2 |
 | 265 | Open app after update | 🖐 Manual | iOS update simulation | — |
 | 266 | Google authentication | 🖐 Manual | OAuth / account picker | — |
 | 267 | Apple authentication | 🖐 Manual | Face ID / system sheet | — |
@@ -322,8 +333,9 @@ Getting the app to even *run* on the iOS simulator took real effort. The facts:
 - **Onboarding ENTRY screen differs (confirmed on a pristine device):**
   - Android → welcome (`"WALK MORE EVERY DAY"` + `"Get started"`).
   - iOS → notifications intro (`"MACADAM WORKS WITH NOTIFICATIONS"` + `Continue`/`Later`).
-  So first-screen asserts must be branched with `when: platform:` (see
-  `smoke/app-launches.yaml`). Deeper flows need their iOS entry path mapped before they pass.
+  So first-screen asserts live in separate platform files (see
+  `smoke/app-launches-ios.yaml` / `app-launches-android.yaml`). Deeper flows use
+  `*-ios.yaml` / `*-android.yaml` entry points where steps differ.
 - **iOS collapses a screen into ONE `accessibilityText` blob** and Maestro does a
   **full (anchored) regex match**, so partial text needs wildcards:
   `visible: "(?i).*works with notifications.*"` (NOT `"(?i)works with notifications"`).
@@ -340,8 +352,8 @@ Getting the app to even *run* on the iOS simulator took real effort. The facts:
 - **`hideKeyboard` doesn't work on iOS** ("Couldn't hide the keyboard"). To dismiss it,
   tap a non-input element instead: a static text (e.g. `id: signIn.title`) or an empty gap
   between form fields (`point: "50%, 17%"` in profile edit). Android keeps `hideKeyboard`.
-  These are branched with `when: platform:` in `login-password.shared.yaml` and
-  `profile-edit-fields.shared.yaml`.
+  These are split into `login-password-ios.shared.yaml` / `-android.shared.yaml` and
+  `profile-edit-fields-ios.shared.yaml` / `-android.shared.yaml`.
 - **iOS keyboard covers bottom buttons.** After typing, the on-screen keyboard hides the
   "Next"/"Save"/sign-in CTAs, so you must dismiss it (see above) before tapping them.
 - **iOS shows a system "Save Password?" prompt** after submitting login credentials, which
@@ -353,18 +365,47 @@ Getting the app to even *run* on the iOS simulator took real effort. The facts:
 - **Text field testIDs differ per platform.** The shared `TextInput` wraps its input in a
   container with `testID="textfield.<inner>"`. Android exposes the **inner** id
   (`common.label.email`); iOS exposes the **container** id (`textfield.common.label.email`).
-  Branch the selector with `when: platform:` (see `login-password.shared.yaml`,
-  `sign-in-screen.yaml`).
+  Branch the selector per platform (see `login-password-ios.shared.yaml` and
+  `sign-in-screen-ios.yaml`).
 - **Driver flakiness:** Maestro 2.6.1 + Xcode 26.2 + iOS 26.3 is very new. Symptoms seen:
   `viewHierarchy` 500 `kAXErrorInvalidUIElement` (often around the Rive animation) and,
   after killing a stuck run, `Failed to connect to 127.0.0.1:<port>`. Fix: reboot the
   simulator clean (`xcrun simctl shutdown <udid> && … boot`) and re-run.
 
+#### iOS driver stability (known Maestro / XCTest limitations)
+
+Local iOS E2E on Xcode 26 + iOS 26 simulators is **not 100% deterministic** today.
+This is a widely reported Maestro + Apple XCTest issue, not a Macadam-specific bug.
+
+**Two failure modes:**
+
+| Symptom | Cause | Mitigation in this repo |
+|---------|--------|-------------------------|
+| `kAXErrorInvalidUIElement` during `viewHierarchy` | Apple XCTest reads the tree while UI is animating / settling | `ios-launch-warmup.shared.yaml` (swipe after `launchApp`); avoid tapping Rive/animated elements; `waitForAnimationToEnd` |
+| `Failed to connect to 127.0.0.1:<port>` | Maestro XCTest driver died; suite mode reuses a dead port | One flow per `maestro test` invocation; `refresh_ios_maestro_driver()` between flows; auto-retry in `run-ios-tests.sh` |
+
+**What the run script does automatically:**
+
+- `MAESTRO_IOS_MAX_RETRIES=2` (default) — up to **3 attempts** per flow, with driver refresh between retries. Disable: `MAESTRO_IOS_MAX_RETRIES=0`.
+- `MAESTRO_DRIVER_STARTUP_TIMEOUT=180000` (3 min) — slow cold starts on dev builds.
+- Smoke runs each `*-ios.yaml` in a **separate Maestro process** (never `maestro test .maestro/smoke/` on iOS).
+- `REFRESH_IOS_DRIVER=1` before login/profile phases in `run-all-local.sh`.
+
+**Rules of thumb:**
+
+1. Always run iOS via `./scripts/run-ios-tests.sh` — not raw `maestro test` on a folder.
+2. If a run dies with `Connection refused`, reboot the simulator and retry once:
+   `pkill -f maestro; xcrun simctl shutdown <udid> && xcrun simctl boot <udid>`
+3. Don't run Android + iOS in parallel on the same Mac while debugging iOS flake.
+4. For CI later: Maestro Cloud with iOS 18.x is reported more stable than local iOS 26 sims.
+
+**Upstream references:** [Maestro #3318](https://github.com/mobile-dev-inc/Maestro/issues/3318) (dead port in batch mode), [#3254](https://github.com/mobile-dev-inc/Maestro/issues/3254) (driver zombie after ~3 tests), [#2617](https://github.com/mobile-dev-inc/Maestro/issues/2617) (`kAXErrorInvalidUIElement`), [Expo gotchas — cold boot swipe](https://juanobrach.dev/blog/maestro-e2e-expo-gotchas/).
+
 #### iOS status (what's actually validated)
 
 - ✅ App **builds, installs, launches and runs** on the iOS 26.3 simulator.
-- ✅ `smoke/app-launches.yaml` **passes on iOS** (platform-branched first-screen assert).
-- ✅ `smoke/sign-in-screen.yaml` **passes on iOS** (dismiss notifications → welcome → sign-in).
+- ✅ `smoke/app-launches-ios.yaml` **passes on iOS** (notifications intro assert).
+- ✅ `smoke/sign-in-screen-ios.yaml` **passes on iOS** (dismiss notifications → welcome → sign-in).
 - ✅ `auth/login-password.yaml` **passes on iOS** (clearKeychain + per-platform field ids +
   keyboard dismissal + "Save Password?" prompt handling).
 - ✅ `profile/edit-profile.yaml` **passes on iOS** (login + edit fields + save).

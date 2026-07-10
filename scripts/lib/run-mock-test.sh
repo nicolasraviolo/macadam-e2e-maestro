@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# Login → profile → edit fields → save → verify.
+# Shared Android runner for flows that need mock server + Metro + login credentials.
 #
-# Usage:
-#   ./scripts/run-profile-edit-test.sh
+# Required env:
+#   MAESTRO_FLOW  — path under .maestro/, e.g. .maestro/regression/tab-navigation.yaml
+# Optional env:
+#   MAESTRO_TEST_LABEL — human label for logs (default: Maestro flow)
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 APP_ROOT="${MACADAM_APP_ROOT:-$HOME/macadam-app}"
 MOCK_HEALTH_URL="${MOCK_HEALTH_URL:-http://localhost:4010/test/health}"
 METRO_URL="${METRO_URL:-http://localhost:8081/status}"
@@ -14,6 +16,8 @@ AVD_NAME="${AVD_NAME:-Pixel_7}"
 EMULATOR_GPU="${EMULATOR_GPU:-host}"
 HEADLESS="${HEADLESS:-0}"
 SHUTDOWN_AFTER="${SHUTDOWN_AFTER:-1}"
+MAESTRO_FLOW="${MAESTRO_FLOW:?Set MAESTRO_FLOW to a .maestro/... path}"
+MAESTRO_TEST_LABEL="${MAESTRO_TEST_LABEL:-$MAESTRO_FLOW}"
 
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home}"
@@ -96,6 +100,18 @@ until [ "$("$ADB" -s "$UDID" shell getprop sys.boot_completed 2>/dev/null | tr -
   sleep 2
 done
 
+# Cold boots can report boot_completed before adb is fully stable.
+sleep 5
+
+APP_ID="${APP_ID:-com.macadamapp.beta}"
+if ! "$ADB" -s "$UDID" shell pm list packages "$APP_ID" 2>/dev/null | grep -q "$APP_ID"; then
+  echo "❌ Macadam beta is not installed on $UDID ($APP_ID)"
+  echo "   Install once: cd ~/macadam-app && yarn android"
+  echo "   Then check:   adb shell pm list packages | grep macadam"
+  exit 1
+fi
+echo "✅ App installed: $APP_ID"
+
 "$ADB" -s "$UDID" reverse tcp:8081 tcp:8081 2>/dev/null || true
 "$ADB" -s "$UDID" reverse tcp:4010 tcp:4010 2>/dev/null || true
 
@@ -103,10 +119,10 @@ done
 source "$REPO_ROOT/scripts/lib/device-shutdown.sh"
 trap shutdown_android_device EXIT
 
-echo "Running profile edit test on $UDID ..."
+echo "Running $MAESTRO_TEST_LABEL on $UDID ..."
 cd "$REPO_ROOT"
 run_maestro_and_exit maestro test --udid "$UDID" \
   -e APP_ID="${APP_ID:-com.macadamapp.beta}" \
   -e MAESTRO_EMAIL="${MAESTRO_EMAIL:-}" \
   -e MAESTRO_PASSWORD="${MAESTRO_PASSWORD:-Test123!}" \
-  .maestro/profile/edit-profile-android.yaml
+  "$MAESTRO_FLOW"

@@ -40,6 +40,9 @@ scripts/        # run-*-test.sh entry points
 - **UI steps only:** `{feature}-{action}.shared.yaml` — e.g. `login-password.shared.yaml`
 - **Full setup (mock + launch):** `{feature}-with-mock.shared.yaml` — e.g. `login-with-mock.shared.yaml`
 - **Platform split:** `{feature}-{platform}.shared.yaml` — e.g. `onboarding-health-ios.shared.yaml`
+- **iOS launch warmup:** `ios-launch-warmup.shared.yaml` — call right after every iOS `launchApp`
+- **Runnable platform split:** `{verb}-{noun}-ios.yaml` / `-android.yaml` — e.g. `app-launches-ios.yaml`
+  Prefer separate files over `when: platform:` in the same flow (reduces iOS driver flake).
 
 ### Tags (top-of-file comment)
 
@@ -107,7 +110,7 @@ one user session:
 |--------------|------------|--------|
 | `signup-onboarding-to-home.yaml` (+ extends) | 269, 270, 274, 277 | One new-user cold start |
 | `regression/convert-steps-wallet-streak.yaml` | 272, 273, 275 | One conversion checks coins + streak + wallet |
-| `smoke/tab-navigation.yaml` | 305 | Shell for tab tests |
+| `regression/tab-navigation.yaml` | 305 | Shell for tab tests |
 | `regression/deals-tab-exploration.yaml` | 298, 299 | Same Deals tab |
 
 Keep **separate** when auth mechanism or precondition differs (password vs Google OAuth).
@@ -118,15 +121,15 @@ Keep **separate** when auth mechanism or precondition differs (password vs Googl
 |------|-------|--------|--------------|
 | 269 | Complete onboarding | ✅ Covered | `auth/signup-onboarding-to-home.yaml` |
 | 302 | Profile — new user | ✅ Partial | `profile/edit-profile.yaml` |
-| — | App launches | ✅ Covered | `smoke/app-launches.yaml` |
-| — | Sign-in screen | ✅ Covered | `smoke/sign-in-screen.yaml` |
-| — | Password login | ✅ Covered | `auth/login-password.yaml` |
-| 305 | Tab navigation | 📋 Phase 1 | `smoke/tab-navigation.yaml` |
-| 301 | Profile — existing user | 📋 Phase 1 | `regression/view-profile.yaml` |
-| 304 | Settings | 📋 Phase 1 | `regression/open-settings.yaml` |
-| 270 | Product tour (new users) | 📋 Phase 1 | extend `signup-onboarding-to-home.yaml` |
-| 277 | Slomo gate (new users) | 📋 Phase 1 | extend `signup-onboarding-to-home.yaml` |
-| 272–275 | Convert / streak / wallet | 📋 Phase 1 | `regression/convert-steps-wallet-streak.yaml` |
+| — | App launches | ✅ Covered | `smoke/app-launches-ios.yaml` / `app-launches-android.yaml` |
+| — | Sign-in screen | ✅ Covered | `smoke/sign-in-screen-ios.yaml` / `sign-in-screen-android.yaml` |
+| — | Password login | ✅ Covered | `auth/login-password-ios.yaml` / `login-password-android.yaml` |
+| 305 | Tab navigation | ✅ Implemented | `regression/tab-navigation.yaml` |
+| 301 | Profile — existing user | ✅ Implemented | `regression/view-profile.yaml` |
+| 304 | Settings | ✅ Implemented | `regression/open-settings.yaml` |
+| 270 | Product tour (new users) | ✅ Implemented | `signup-onboarding-to-home.yaml` |
+| 277 | Slomo gate (new users) | ✅ Implemented | `signup-onboarding-to-home.yaml` |
+| 272–275 | Convert / streak / wallet | ⚠️ Implemented | `regression/convert-steps-wallet-streak.yaml` |
 | 274 | Streak during product tour | 📋 Phase 2 | extend onboarding subflow |
 | 276 | XP after conversion | 📋 Phase 2 | `regression/xp-after-conversion.yaml` |
 | 298–299 | Offers wall / games | 📋 Phase 2 | `regression/deals-tab-exploration.yaml` |

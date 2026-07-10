@@ -1,0 +1,29 @@
+# Profile Overview → Settings (gear icon, top right).
+#
+# Prerequisites: on Profile Overview (see open-profile-from-tab.shared.yaml).
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+# TODO (app team): add testID on settings gear in PFHeaderButtons.tsx
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          point: "92%, 7%"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          point: "93%, 10%"
+
+- extendedWaitUntil:
+    visible:
+      id: settings.title
+    timeout: 20000
+
+- assertVisible:
+    id: settings.title

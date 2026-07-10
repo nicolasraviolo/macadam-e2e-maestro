@@ -1,0 +1,20 @@
+# Android: dismiss notifications slides if shown, then reach welcome screen.
+
+appId: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible: "(?i)(Later|Get started)"
+    timeout: 60000
+
+- repeat:
+    times: 15
+    while:
+      notVisible: "Get started"
+    commands:
+      - tapOn:
+          text: "Later"
+          optional: true
+
+- extendedWaitUntil:
+    visible: "Get started"
+    timeout: 10000

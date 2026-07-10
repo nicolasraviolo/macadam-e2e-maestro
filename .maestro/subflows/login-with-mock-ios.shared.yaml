@@ -1,9 +1,4 @@
-# Reusable sign-up with mock server — creates a fresh @macadam.app account.
-#
-# Prerequisites: same as login-with-mock.yaml (mock :4010, E2E build, Metro).
-#
-# Generates random credentials unless MAESTRO_EMAIL is already set.
-# After this flow the app is signed in as a new user (ready for onboarding tests).
+# iOS: mock reset + launch + password login (full cold start).
 
 appId: ${APP_ID}
 env:
@@ -11,12 +6,6 @@ env:
   MAESTRO_EMAIL: ${MAESTRO_EMAIL}
   MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
 ---
-- runScript:
-    file: ../scripts/generate-test-account.js
-    env:
-      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
-      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
-
 - runScript:
     file: ../scripts/api/resetScenario.js
 
@@ -27,8 +16,6 @@ env:
 
 - launchApp:
     clearState: true
-    # iOS keeps the Firebase auth token in the Keychain (clearState doesn't wipe it);
-    # clearKeychain ensures a logged-out start. iOS-only, ignored on Android.
     clearKeychain: true
     permissions:
       all: deny
@@ -37,8 +24,6 @@ env:
       flags: '{"onb_track_notifications_enabled":true,"pre_signup_enabled":true,"personalization_enabled":true,"magic_link_enabled":false,"onboarding_cmp_after_att":false}'
 
 - runFlow:
-    when:
-      platform: iOS
     file: ios-launch-warmup.shared.yaml
     env:
       APP_ID: ${APP_ID}
@@ -49,17 +34,12 @@ env:
       wait_seconds: "4"
 
 - runFlow:
-    file: dismiss-notifications-if-needed.yaml
+    file: dismiss-notifications-if-needed-ios.shared.yaml
     env:
       APP_ID: ${APP_ID}
 
 - runFlow:
-    file: signup-presignup.shared.yaml
-    env:
-      APP_ID: ${APP_ID}
-
-- runFlow:
-    file: signup-credentials.shared.yaml
+    file: login-password-ios.shared.yaml
     env:
       APP_ID: ${APP_ID}
       MAESTRO_EMAIL: ${MAESTRO_EMAIL}

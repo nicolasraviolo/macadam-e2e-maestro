@@ -5,8 +5,8 @@
 #   ~/Desktop/macadam-e2e-maestro/scripts/run-ios-tests.sh
 #
 # Choose a flow (default: smoke suite):
-#   FLOW=.maestro/profile/edit-profile.yaml ./scripts/run-ios-tests.sh
-#   FLOW=.maestro/auth/login-password.yaml  ./scripts/run-ios-tests.sh
+#   FLOW=.maestro/profile/edit-profile-ios.yaml ./scripts/run-ios-tests.sh
+#   FLOW=.maestro/auth/login-password-ios.yaml  ./scripts/run-ios-tests.sh
 #
 # Choose a simulator (default: first available iPhone, else "iPhone 15"):
 #   SIM_NAME="iPhone 15 Pro" ./scripts/run-ios-tests.sh
@@ -40,8 +40,11 @@
 #   - Needs an iOS simulator runtime that the active Xcode supports (e.g. iOS
 #     26.3.x for Xcode 26.2). Install via: xcodebuild -downloadPlatform iOS
 #
-# Shutdown simulator when tests finish (default: yes, pass or fail):
-#   SHUTDOWN_AFTER=0 ./scripts/run-ios-tests.sh
+# Shutdown simulator when this script finishes (default: no — leave open for debugging).
+#   SHUTDOWN_AFTER=1 ./scripts/run-ios-tests.sh
+#
+# iOS driver retries (default: 2 retries = 3 attempts total). Set 0 to disable.
+#   MAESTRO_IOS_MAX_RETRIES=0 ./scripts/run-ios-tests.sh
 
 set -euo pipefail
 
@@ -52,11 +55,12 @@ SIM_NAME="${SIM_NAME:-}"
 FLOW="${FLOW:-.maestro/smoke/}"
 MOCK_HEALTH_URL="${MOCK_HEALTH_URL:-http://localhost:4010/test/health}"
 METRO_URL="${METRO_URL:-http://localhost:8081/status}"
-SHUTDOWN_AFTER="${SHUTDOWN_AFTER:-1}"
+SHUTDOWN_AFTER="${SHUTDOWN_AFTER:-0}"
 
 export PATH="$HOME/.maestro/bin:$PATH"
 export MAESTRO_CLI_NO_ANALYTICS="${MAESTRO_CLI_NO_ANALYTICS:-1}"
 export MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED="${MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED:-1}"
+export MAESTRO_DRIVER_STARTUP_TIMEOUT="${MAESTRO_DRIVER_STARTUP_TIMEOUT:-180000}"
 
 if [ -f "$REPO_ROOT/.env" ]; then
   set -a
@@ -130,32 +134,81 @@ else
 fi
 
 # --- Pick / boot a simulator ---
+# grep returns 1 when nothing is booted; with pipefail that must not kill the script.
 booted_udid() {
   xcrun simctl list devices booted 2>/dev/null \
-    | grep -Eo '\(([0-9A-F-]{36})\)' | head -1 | tr -d '()'
+    | grep -Eo '\(([0-9A-F-]{36})\)' 2>/dev/null | head -1 | tr -d '()' || true
+}
+
+# Offline check: find an available simulator that already has the app bundle installed.
+sim_udid_with_app() {
+  local bundle_id="$1"
+  local devices_root="$HOME/Library/Developer/CoreSimulator/Devices"
+  local udid app_path
+  for udid in $(xcrun simctl list devices available 2>/dev/null \
+    | grep -Eo '\([0-9A-F-]{36}\)' 2>/dev/null | tr -d '()' || true); do
+    app_path="$(find "$devices_root/$udid/data/Containers/Bundle/Application" \
+      -maxdepth 2 -name "${bundle_id}*.app" -print -quit 2>/dev/null || true)"
+    if [ -n "$app_path" ]; then
+      echo "$udid"
+      return 0
+    fi
+  done
+  return 1
+}
+
+sim_name_for_udid() {
+  local target_udid="$1"
+  xcrun simctl list devices available 2>/dev/null \
+    | grep -F "($target_udid)" | sed -E 's/^[[:space:]]+//; s/ \([^)]+\).*$//' | head -1
+}
+
+sim_has_app() {
+  local target_udid="$1"
+  find "$HOME/Library/Developer/CoreSimulator/Devices/$target_udid/data/Containers/Bundle/Application" \
+    -maxdepth 2 -name "${APP_ID}*.app" -print -quit 2>/dev/null | grep -q .
 }
 
 UDID="$(booted_udid)"
 
+# A booted simulator without the app blocks auto-selection — shut it down and pick another.
+if [ -n "$UDID" ] && [ -z "$SIM_NAME" ] && ! sim_has_app "$UDID"; then
+  echo "Booted simulator lacks $APP_ID — selecting a device with the app installed…"
+  xcrun simctl shutdown "$UDID" 2>/dev/null || true
+  UDID=""
+fi
+
 if [ -z "$UDID" ]; then
-  # Choose a target simulator by name (or first available iPhone)
   if [ -z "$SIM_NAME" ]; then
-    SIM_NAME="$(xcrun simctl list devices available 2>/dev/null \
-      | grep -Eo 'iPhone [0-9][0-9A-Za-z ]*' | head -1 | sed 's/ *$//')"
+    UDID="$(sim_udid_with_app "$APP_ID" || true)"
+    if [ -n "$UDID" ]; then
+      SIM_NAME="$(sim_name_for_udid "$UDID")"
+      echo "Using simulator with app installed: $SIM_NAME"
+    fi
   fi
-  if [ -z "$SIM_NAME" ]; then
-    echo "❌ No iPhone simulator available."
-    echo "   Open Xcode → Settings → Platforms and install an iOS runtime,"
-    echo "   or create a simulator in Xcode → Window → Devices and Simulators."
-    exit 1
-  fi
-  echo "Booting simulator: $SIM_NAME"
-  # Find the UDID for that device name
-  UDID="$(xcrun simctl list devices available 2>/dev/null \
-    | grep -F "$SIM_NAME (" | grep -Eo '\(([0-9A-F-]{36})\)' | head -1 | tr -d '()')"
   if [ -z "$UDID" ]; then
-    echo "❌ Simulator named '$SIM_NAME' not found. Set SIM_NAME to an installed device."
-    exit 1
+    # Fall back to name-based selection (E2E device first, then any iPhone).
+    if [ -z "$SIM_NAME" ]; then
+      SIM_NAME="$(xcrun simctl list devices available 2>/dev/null \
+        | grep -E 'iPhone.*E2E' | grep -Eo 'iPhone [^()]+' | tail -1 | sed 's/ *$//' || true)"
+    fi
+    if [ -z "$SIM_NAME" ]; then
+      SIM_NAME="$(xcrun simctl list devices available 2>/dev/null \
+        | grep -Eo 'iPhone [0-9][0-9A-Za-z ]*' 2>/dev/null | head -1 | sed 's/ *$//' || true)"
+    fi
+    if [ -z "$SIM_NAME" ]; then
+      echo "❌ No iPhone simulator available."
+      echo "   Open Xcode → Settings → Platforms and install an iOS runtime,"
+      echo "   or create a simulator in Xcode → Window → Devices and Simulators."
+      exit 1
+    fi
+    echo "Booting simulator: $SIM_NAME"
+    UDID="$(xcrun simctl list devices available 2>/dev/null \
+      | grep -F "$SIM_NAME (" | grep -Eo '\(([0-9A-F-]{36})\)' 2>/dev/null | head -1 | tr -d '()' || true)"
+    if [ -z "$UDID" ]; then
+      echo "❌ Simulator named '$SIM_NAME' not found. Set SIM_NAME to an installed device."
+      exit 1
+    fi
   fi
   xcrun simctl boot "$UDID" 2>/dev/null || true
   open -a Simulator 2>/dev/null || true
@@ -172,6 +225,24 @@ if [ -z "$UDID" ]; then
   exit 1
 fi
 echo "✅ Simulator booted: $UDID"
+
+refresh_ios_maestro_driver() {
+  echo "Refreshing iOS Maestro driver…"
+  xcrun simctl terminate "$UDID" com.macadam.app.beta 2>/dev/null || true
+  xcrun simctl terminate "$UDID" com.mobile.dev.maestro-driver-iosUITests.xcrun 2>/dev/null || true
+  pkill -f "maestro-driver-iosUITests-Runner" 2>/dev/null || true
+  pkill -f "maestro_xctestrunner_xcodebuild_output" 2>/dev/null || true
+  sleep 5
+}
+
+# Stale Maestro XCTest runners cause kAXErrorInvalidUIElement / SafariViewService popups.
+# REFRESH_IOS_DRIVER=1 — use between suite phases (smoke → login → profile).
+if [ "${REFRESH_IOS_DRIVER:-0}" = "1" ]; then
+  refresh_ios_maestro_driver
+else
+  xcrun simctl terminate "$UDID" com.mobile.dev.maestro-driver-iosUITests.xcrun 2>/dev/null || true
+  pkill -f "maestro-driver-iosUITests-Runner" 2>/dev/null || true
+fi
 
 # --- Force a deterministic locale (English) so text assertions are stable ---
 # The flows assume English UI (same as the Android emulator). The iOS simulator
@@ -214,8 +285,57 @@ trap shutdown_ios_device EXIT
 
 echo "Running Maestro on iOS ($UDID): $FLOW"
 cd "$REPO_ROOT"
-run_maestro_and_exit maestro test --udid "$UDID" \
-  -e APP_ID="$APP_ID" \
-  -e MAESTRO_EMAIL="${MAESTRO_EMAIL:-}" \
-  -e MAESTRO_PASSWORD="${MAESTRO_PASSWORD:-Test123!}" \
-  "$FLOW"
+
+maestro_common_args=(
+  test --udid "$UDID"
+  -e APP_ID="$APP_ID"
+  -e MAESTRO_EMAIL="${MAESTRO_EMAIL:-}"
+  -e MAESTRO_PASSWORD="${MAESTRO_PASSWORD:-Test123!}"
+)
+
+# Run one flow with driver refresh + optional retries (infra flake on iOS 26).
+run_maestro_ios_with_retry() {
+  local flow="$1"
+  local max_retries="${MAESTRO_IOS_MAX_RETRIES:-2}"
+  local total_attempts=$((max_retries + 1))
+  local attempt exit_code=1
+
+  for attempt in $(seq 1 "$total_attempts"); do
+    if [ "$attempt" -gt 1 ]; then
+      echo ""
+      echo "↻ iOS retry $((attempt - 1))/$max_retries for $flow (refreshing driver)…"
+    fi
+    refresh_ios_maestro_driver
+    echo ""
+    echo "▶ $flow (attempt $attempt/$total_attempts)"
+    exit_code=0
+    run_maestro_cmd maestro "${maestro_common_args[@]}" "$flow" || exit_code=$?
+    if [ "$exit_code" = "0" ]; then
+      return 0
+    fi
+    if [ "$attempt" -lt "$total_attempts" ]; then
+      echo "⚠️  Attempt $attempt failed (exit $exit_code)"
+    fi
+  done
+  echo "❌ All $total_attempts attempts failed for $flow"
+  return "$exit_code"
+}
+
+# Smoke: run each flow in its own Maestro session. Running both in one session
+# (clearState twice back-to-back) often triggers iOS driver flake (kAXErrorInvalidUIElement).
+run_smoke_flows_sequentially() {
+  local flow
+  for flow in .maestro/smoke/app-launches-ios.yaml .maestro/smoke/sign-in-screen-ios.yaml; do
+    run_maestro_ios_with_retry "$flow" || exit $?
+  done
+}
+
+case "$FLOW" in
+  .maestro/smoke/|.maestro/smoke)
+    run_smoke_flows_sequentially
+    ;;
+  *)
+    run_maestro_ios_with_retry "$FLOW"
+    exit $?
+    ;;
+esac

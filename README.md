@@ -12,11 +12,20 @@ generic `./scripts/run-ios-tests.sh` with `FLOW=...` (see [iOS section](#ios-sim
 | Suite | Android command | iOS | Ready? |
 |-------|-----------------|-----|--------|
 | Smoke (no login) | `./scripts/run-android-tests.sh` | `./scripts/run-ios-tests.sh` | Yes |
-| Password login | `./scripts/run-login-test.sh` | `FLOW=.maestro/auth/login-password.yaml ./scripts/run-ios-tests.sh` | Yes (iOS needs build) |
-| Profile edit | `./scripts/run-profile-edit-test.sh` | `FLOW=.maestro/profile/edit-profile.yaml ./scripts/run-ios-tests.sh` | Yes (iOS needs build) |
+| Password login | `./scripts/run-login-test.sh` | `FLOW=.maestro/auth/login-password-ios.yaml ./scripts/run-ios-tests.sh` | Yes (iOS needs build) |
+| Profile edit | `./scripts/run-profile-edit-test.sh` | `FLOW=.maestro/profile/edit-profile-ios.yaml ./scripts/run-ios-tests.sh` | Yes (iOS needs build) |
 | Fresh sign-up | `./scripts/run-signup-test.sh` | `FLOW=.maestro/auth/signup-fresh-account.yaml ./scripts/run-ios-tests.sh` | Yes (iOS needs build) |
 | Sign-up → onboarding → Home | `./scripts/run-signup-onboarding-test.sh` | `FLOW=.maestro/auth/signup-onboarding-to-home.yaml ./scripts/run-ios-tests.sh` | Android yes · iOS health-sync needs verification |
 | Sign-up onboarding (fast probe) | `./scripts/run-signup-onboarding-probe-test.sh` | `FLOW=.maestro/auth/signup-onboarding-probe.yaml ./scripts/run-ios-tests.sh` | Yes (iOS needs build) |
+| Tab navigation (Qase 305) | `./scripts/run-tab-navigation-test.sh` | `FLOW=.maestro/regression/tab-navigation.yaml ./scripts/run-ios-tests.sh` | Android ✅ |
+| View profile (Qase 301) | `./scripts/run-view-profile-test.sh` | `FLOW=.maestro/regression/view-profile.yaml ./scripts/run-ios-tests.sh` | Android ✅ |
+| Settings (Qase 304) | `./scripts/run-open-settings-test.sh` | `FLOW=.maestro/regression/open-settings.yaml ./scripts/run-ios-tests.sh` | Android ✅ |
+| Phase 1 batch (305→301→304) | `SHUTDOWN_AFTER=0 ./scripts/run-phase1-regression-test.sh` | — | Android ✅ |
+| Sign-up onboarding 270/277 | `./scripts/run-signup-onboarding-270-277-test.sh` | `FLOW=.maestro/auth/signup-onboarding-to-home.yaml ./scripts/run-ios-tests.sh` | Emulator blocked (Google Fit) |
+| Deals / offers wall (298–299) | `./scripts/run-deals-tab-exploration-test.sh` | `FLOW=.maestro/regression/deals-tab-exploration.yaml ./scripts/run-ios-tests.sh` | Android ✅ (shell; games need API) |
+| Charity spend (300) | `./scripts/run-spend-coins-charity-test.sh` | `FLOW=.maestro/regression/spend-coins-charity.yaml ./scripts/run-ios-tests.sh` | Android ✅ (charity cards need API) |
+| Phase 2 batch (298→300) | `SHUTDOWN_AFTER=0 ./scripts/run-phase2-regression-test.sh` | — | Android ✅ |
+| Convert steps / wallet (Qase 272–275) | `./scripts/run-convert-steps-test.sh` | `FLOW=.maestro/regression/convert-steps-wallet-streak.yaml ./scripts/run-ios-tests.sh` | New — may need step debug on emulator |
 | CI (GitHub) | — | — | Planned — see [docs/ci-future.md](docs/ci-future.md) |
 
 **Docs:** [Testing guide & learnings](docs/testing-guide.md) · [CI plan](docs/ci-future.md) · [Agent skill](.cursor/skills/maestro-e2e-macadam/SKILL.md)
@@ -40,7 +49,7 @@ generic `./scripts/run-ios-tests.sh` with `FLOW=...` (see [iOS section](#ios-sim
 Single flow:
 
 ```bash
-FLOW=.maestro/smoke/app-launches.yaml ~/Desktop/macadam-e2e-maestro/scripts/run-android-tests.sh
+FLOW=.maestro/smoke/app-launches-android.yaml ~/Desktop/macadam-e2e-maestro/scripts/run-android-tests.sh
 ```
 
 ### Password login test
@@ -166,11 +175,16 @@ cd ~/Desktop/macadam-e2e-maestro
 ./scripts/run-ios-tests.sh
 
 # Any other flow
-FLOW=.maestro/profile/edit-profile.yaml ./scripts/run-ios-tests.sh
+FLOW=.maestro/profile/edit-profile-ios.yaml ./scripts/run-ios-tests.sh
 
 # Pick a specific simulator
 SIM_NAME="iPhone 15 Pro" ./scripts/run-ios-tests.sh
 ```
+
+**iOS driver flake:** local iOS 26 + Maestro can fail intermittently (`kAXErrorInvalidUIElement`,
+`Connection refused`). The script auto-retries up to 3 times per flow (driver refresh between
+attempts). Disable retries: `MAESTRO_IOS_MAX_RETRIES=0`. Details:
+[testing guide — iOS driver stability](docs/testing-guide.md#ios-driver-stability-known-maestro--xctest-limitations).
 
 The script checks Xcode, boots a simulator, verifies the app is installed and that
 mock + Metro are up, then runs Maestro with `APP_ID=com.macadam.app.beta`. If a

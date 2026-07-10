@@ -1,0 +1,48 @@
+# Android: edit profile fields and save. Caller must be on Profile overview.
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/generate-profile-values.js
+
+- tapOn:
+    point: "84%, 7%"
+
+- extendedWaitUntil:
+    visible:
+      id: textfield.firstname
+    timeout: 15000
+
+- tapOn:
+    id: textfield.firstname
+- eraseText
+- inputText: ${output.PROFILE_FIRSTNAME}
+
+- tapOn:
+    id: textfield.lastname
+- eraseText
+- inputText: ${output.PROFILE_LASTNAME}
+
+- tapOn:
+    id: textfield.pseudo
+- eraseText
+- inputText: ${output.PROFILE_PSEUDO}
+
+- tapOn:
+    id: textfield.city
+- eraseText
+- inputText: ${output.PROFILE_CITY}
+
+- hideKeyboard
+
+- tapOn: "Save"
+
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 20000
+
+- assertVisible: ${output.PROFILE_FIRSTNAME}
+- assertVisible: "@${output.PROFILE_PSEUDO}"
+- assertVisible: ${output.PROFILE_CITY}
