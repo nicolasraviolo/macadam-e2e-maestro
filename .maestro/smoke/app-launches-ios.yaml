@@ -1,0 +1,29 @@
+# tags: smoke
+#
+# What: iOS — app opens on the notifications intro screen.
+# Why:  Confirms simulator + build + Maestro are wired before deeper flows.
+#
+# Run: ./scripts/run-ios-tests.sh  (smoke suite)
+
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+
+- runFlow:
+    file: ../subflows/ios-launch-warmup.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+# Dev builds can take 20–40s to load after clearState on iOS.
+- runScript:
+    file: ../scripts/wait-for-config.js
+    env:
+      wait_seconds: "8"
+
+# iOS collapses the notifications intro into one accessibility blob
+# ("MACADAM WORKS WITH NOTIFICATIONS. ... Continue Later") — use .* wildcards.
+- extendedWaitUntil:
+    visible: "(?i).*works with notifications.*"
+    timeout: 60000

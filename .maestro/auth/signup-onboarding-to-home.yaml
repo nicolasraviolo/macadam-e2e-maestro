@@ -1,0 +1,45 @@
+# tags: auth, signup, onboarding, regression
+# qase: MACADAM-269, MACADAM-270, MACADAM-277
+#
+# Full new-user journey: sign-up → referral → health sync → full product tour → real Home.
+# Also covers MACADAM-270 (product tour) and MACADAM-277 (Slomo XP gate).
+#
+# Run: ./scripts/run-signup-onboarding-test.sh
+#
+# Reuses patterns from macadam-app/maestro/e2e/HealthIssues/google-fit.yaml for permissions.
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/signup-onboarding-with-mock.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- runFlow:
+    file: ../subflows/onboarding-after-signup.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+# MACADAM-270 — product tour coach marks (steps 1–4) exercised in subflow above
+
+# MACADAM-277 — Slomo not active until XP chip tapped
+- extendedWaitUntil:
+    visible:
+      id: common.slomoXp.level.shortName
+    timeout: 30000
+
+- tapOn:
+    id: common.slomoXp.level.shortName
+
+- extendedWaitUntil:
+    visible:
+      id: slomo.onboarding.title
+    timeout: 20000
+
+- assertVisible:
+    id: slomo.onboarding.title

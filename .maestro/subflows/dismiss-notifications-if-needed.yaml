@@ -1,0 +1,18 @@
+# Dispatcher for flows not yet split per platform (signup, regression).
+# iOS/Android run scripts use *-ios.yaml / *-android.yaml directly instead.
+
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      platform: iOS
+    file: dismiss-notifications-if-needed-ios.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- runFlow:
+    when:
+      platform: Android
+    file: dismiss-notifications-if-needed-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}

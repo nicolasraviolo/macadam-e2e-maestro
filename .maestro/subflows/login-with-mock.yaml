@@ -1,0 +1,26 @@
+# Dispatcher for regression flows not yet split per platform.
+# iOS/Android run scripts use login-with-mock-ios.shared.yaml / -android.shared.yaml.
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+  MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+  MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+---
+- runFlow:
+    when:
+      platform: iOS
+    file: login-with-mock-ios.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- runFlow:
+    when:
+      platform: Android
+    file: login-with-mock-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}

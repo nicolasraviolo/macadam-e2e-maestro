@@ -1,0 +1,22 @@
+# Maestro workspace defaults for Macadam E2E (local runs).
+#
+# APP_ID default = Android beta. Override per platform on the CLI:
+#   Android:  maestro test -e APP_ID=com.macadamapp.beta  .maestro/smoke/
+#   iOS:      maestro test -e APP_ID=com.macadam.app.beta .maestro/smoke/
+#
+# The run scripts set APP_ID for you (Android scripts use the default,
+# iOS scripts pass the iOS bundle id).
+
+env:
+  # Beta / preprod build (Android default for local E2E)
+  APP_ID: com.macadamapp.beta
+
+# Platform-specific smoke flows (see *-ios.yaml / *-android.yaml).
+# Run scripts invoke each platform file separately — not the whole smoke/ folder.
+executionOrder:
+  continueOnFailure: true
+  flowsOrder:
+    - smoke/app-launches-ios
+    - smoke/app-launches-android
+    - smoke/sign-in-screen-ios
+    - smoke/sign-in-screen-android

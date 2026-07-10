@@ -1,0 +1,37 @@
+# iOS health sync: HealthKit provider permission.
+#
+# On iOS the flow enters directly on HSHealthProviderPermission (no Android
+# activity-recognition screen). The provider is Apple Health (HealthKit) and the
+# permission is a native iOS system sheet.
+#
+# Only invoked when platform == iOS (see onboarding-after-signup.shared.yaml).
+#
+# NOTE (needs on-device verification): the native HealthKit sheet labels below are
+# best-effort. Adjust after the first real iOS simulator run.
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+# --- Connect Apple Health (health provider) ---
+- extendedWaitUntil:
+    visible:
+      id: healthSync.providerPermission.title
+    timeout: 30000
+
+# SubmitButton uses title= here (not labelProps)
+- tapOn: "Continue"
+
+# Native iOS HealthKit permission sheet — enable all categories, then allow.
+- tapOn:
+    text: "Turn On All"
+    optional: true
+
+- tapOn:
+    text: "Allow"
+    optional: true
+
+# If HealthKit is unavailable on the simulator, the app may show the error/skip path.
+- tapOn:
+    text: "Later"
+    optional: true

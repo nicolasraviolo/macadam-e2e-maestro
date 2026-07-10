@@ -1,0 +1,40 @@
+# tags: smoke
+#
+# What: iOS — logged-out user reaches the sign-in screen.
+# Why:  Validates onboarding navigation on iOS (notifications → welcome → sign-in).
+#
+# Run: ./scripts/run-ios-tests.sh  (smoke suite)
+
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+
+- runFlow:
+    file: ../subflows/ios-launch-warmup.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- runFlow:
+    file: ../subflows/dismiss-notifications-if-needed-ios.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- tapOn: "Get started"
+
+- extendedWaitUntil:
+    visible:
+      id: button.common.lets.go.button
+    timeout: 15000
+
+- tapOn: "(?i)I already have an account"
+
+- assertVisible:
+    id: signIn.title
+
+- assertVisible:
+    id: textfield.common.label.email
+
+- assertVisible:
+    id: button.onboarding.signup.primarycta

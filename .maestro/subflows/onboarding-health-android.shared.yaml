@@ -1,0 +1,44 @@
+# Android health sync: activity recognition + Google Fit.
+# Reused from macadam-app/maestro/e2e/HealthIssues/google-fit.yaml.
+#
+# Only invoked when platform == Android (see onboarding-after-signup.shared.yaml).
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+# --- Activity recognition (count steps) — Android only ---
+- extendedWaitUntil:
+    visible:
+      id: healthSync.activityPermission.title
+    timeout: 30000
+
+- assertVisible:
+    id: healthSync.activityPermission.title
+
+- tapOn:
+    id: button.common.button.continue
+
+- tapOn:
+    id: permission_allow_button
+    optional: true
+
+# --- Connect Google Fit (health provider) ---
+- extendedWaitUntil:
+    visible:
+      id: healthSync.providerPermission.title
+    timeout: 30000
+
+# SubmitButton uses title= here (not labelProps) — testID is button.undefined
+- tapOn: "Continue"
+
+# Account picker on a device with a linked Google account
+- tapOn:
+    id: account_name
+    optional: true
+
+# Emulator recovery (OAuth WebView + Fit error modal + permission help)
+- runFlow:
+    file: finish-onboarding-health-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}

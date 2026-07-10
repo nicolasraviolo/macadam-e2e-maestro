@@ -1,0 +1,93 @@
+# tags: regression, smoke
+# qase: MACADAM-305
+#
+# What: Logged-in user taps each bottom-tab destination without crashes.
+# Why:  Core navigation smoke — Map, Deals, Spend, Social, Profile.
+#
+# Run: ./scripts/run-tab-navigation-test.sh
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/login-with-mock.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- extendedWaitUntil:
+    visible:
+      id: button_user_picture
+    timeout: 30000
+
+# --- Deals ---
+- tapOn:
+    id: home.tabBar.deals
+
+- extendedWaitUntil:
+    visible:
+      id: deals.home.title
+    timeout: 20000
+
+- assertVisible:
+    id: deals.home.title
+
+# --- Spend (Offers tab) ---
+- tapOn:
+    id: home.tabBar.offers
+
+- extendedWaitUntil:
+    visible:
+      id: offers.title
+    timeout: 20000
+
+- assertVisible:
+    id: offers.title
+
+# --- Social (Leaderboard) ---
+- tapOn:
+    id: home.tabBar.social
+
+# TODO (app team): add testID on Social screen header — using title text for now.
+- extendedWaitUntil:
+    visible: "Social"
+    timeout: 30000
+
+- assertVisible: "Social"
+
+# --- Profile (avatar) ---
+- tapOn:
+    id: button_user_picture
+
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 20000
+
+- assertVisible: "Overview"
+
+# --- Back to Home ---
+- tapOn:
+    id: home.tabBar.home
+
+- extendedWaitUntil:
+    visible:
+      id: home.tabBar.home
+    timeout: 20000
+
+- assertVisible:
+    id: home.tabBar.home
+
+# --- Map (last) ---
+# First visit opens map onboarding and hides the tab bar (app design).
+# Assert onboarding loaded — not home.tabBar.map (hidden while onboarding shows).
+- tapOn:
+    id: home.tabBar.map
+
+- extendedWaitUntil:
+    visible: "Let's go!"
+    timeout: 20000
+
+- assertVisible: "Let's go!"

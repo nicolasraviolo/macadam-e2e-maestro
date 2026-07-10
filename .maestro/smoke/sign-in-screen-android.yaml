@@ -1,0 +1,34 @@
+# tags: smoke
+#
+# What: Android — logged-out user reaches the sign-in screen.
+# Why:  Validates onboarding navigation on Android (welcome → sign-in).
+#
+# Run: ./scripts/run-android-tests.sh  (smoke suite)
+
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+
+- runFlow:
+    file: ../subflows/dismiss-notifications-if-needed-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- tapOn: "Get started"
+
+- extendedWaitUntil:
+    visible:
+      id: button.common.lets.go.button
+    timeout: 15000
+
+- tapOn: "(?i)I already have an account"
+
+- assertVisible:
+    id: signIn.title
+
+- assertVisible:
+    id: common.label.email
+
+- assertVisible:
+    id: button.onboarding.signup.primarycta

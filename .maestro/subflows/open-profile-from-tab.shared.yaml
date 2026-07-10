@@ -1,0 +1,21 @@
+# Open profile tab via bottom-nav avatar (UserPicture).
+#
+# Prerequisites: logged in on Home (button_user_picture visible in tab bar).
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible:
+      id: button_user_picture
+    timeout: 30000
+
+- tapOn:
+    id: button_user_picture
+
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 20000
+
+- assertVisible: "Overview"

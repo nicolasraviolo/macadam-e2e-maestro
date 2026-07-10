@@ -1,0 +1,19 @@
+# Dispatcher — prefer profile-edit-fields-ios.shared.yaml or -android.shared.yaml.
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+- runFlow:
+    when:
+      platform: iOS
+    file: profile-edit-fields-ios.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- runFlow:
+    when:
+      platform: Android
+    file: profile-edit-fields-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}

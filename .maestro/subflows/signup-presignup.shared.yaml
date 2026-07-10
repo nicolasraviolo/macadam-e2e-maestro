@@ -1,0 +1,122 @@
+# UI steps: welcome → personalization → sign-up email screen.
+# Does not enter credentials — use signup-credentials.shared.yaml next.
+#
+# Requires magic_link_enabled: false (password sign-up path after personalization).
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible: "Get started"
+    timeout: 30000
+
+- tapOn:
+    id: onboarding.presignup.welcome.getStarted
+
+- extendedWaitUntil:
+    visible:
+      id: button.common.lets.go.button
+    timeout: 15000
+
+- tapOn:
+    id: button.common.lets.go.button
+
+# Username slide.
+# iOS: PageSlider collapses testIDs — type name and tap visible "Next", then "Confirm".
+# Android: uses testIDs on field and button.
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: onboarding.personalization.username.field.label
+          timeout: 15000
+      - tapOn:
+          id: onboarding.personalization.username.field.label
+      - inputText: "E2EUser"
+      - tapOn:
+          id: button.onboarding.personalization.username.button.label
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - extendedWaitUntil:
+          visible: "(?i).*your first name.*"
+          timeout: 15000
+      - inputText: "E2EUser"
+      - pressKey: Enter
+      - repeat:
+          times: 20
+          while:
+            notVisible: "Confirm"
+          commands:
+            - pressKey: Enter
+            - runScript:
+                file: ../scripts/wait-for-config.js
+                env:
+                  wait_seconds: "1"
+      - tapOn: "Confirm"
+
+# Country slide — Android only (iOS handled above with visible text).
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - extendedWaitUntil:
+          visible:
+            id: button.common.button.confirm
+          timeout: 30000
+      - tapOn:
+          id: button.common.button.confirm
+
+# Goals slide — selecting a goal auto-advances
+- extendedWaitUntil:
+    visible: "Track my steps"
+    timeout: 15000
+
+- tapOn: "Track my steps"
+
+# Permissions slide (onb_track_notifications_enabled: true). If the flag is off,
+# the app skips straight to the success screen — tap is optional.
+- tapOn:
+    id: button.common.button.continue
+    optional: true
+
+# Success screen auto-advances (~3s) to Signup. On some builds an IDFA / privacy
+# screen appears first (button testID is button.Continue, not button.common.*).
+- runScript:
+    file: ../scripts/wait-for-config.js
+    env:
+      wait_seconds: "4"
+
+# iOS: ATT dialog + optional IDFA privacy screen before Signup email field.
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - repeat:
+          times: 25
+          while:
+            notVisible:
+              id: textfield.email
+          commands:
+            - tapOn:
+                text: "Cancel"
+                optional: true
+            - tapOn:
+                text: "Later"
+                optional: true
+            - tapOn:
+                text: "Continue"
+                optional: true
+            - runScript:
+                file: ../scripts/wait-for-config.js
+                env:
+                  wait_seconds: "1"
+
+- extendedWaitUntil:
+    visible:
+      id: textfield.email
+    timeout: 35000

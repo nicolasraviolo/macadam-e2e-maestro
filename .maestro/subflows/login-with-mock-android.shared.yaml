@@ -1,0 +1,40 @@
+# Android: mock reset + launch + password login (full cold start).
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+  MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+  MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+---
+- runScript:
+    file: ../scripts/api/resetScenario.js
+
+- runScript:
+    file: ../scripts/api/update-local-feature-flag.js
+    env:
+      maestro_flags: '{"flags":{"onb_track_notifications_enabled":true,"pre_signup_enabled":true,"personalization_enabled":true,"magic_link_enabled":false,"onboarding_cmp_after_att":false}}'
+
+- launchApp:
+    clearState: true
+    permissions:
+      all: deny
+      notifications: allow
+    arguments:
+      flags: '{"onb_track_notifications_enabled":true,"pre_signup_enabled":true,"personalization_enabled":true,"magic_link_enabled":false,"onboarding_cmp_after_att":false}'
+
+- runScript:
+    file: ../scripts/wait-for-config.js
+    env:
+      wait_seconds: "4"
+
+- runFlow:
+    file: dismiss-notifications-if-needed-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- runFlow:
+    file: login-password-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}

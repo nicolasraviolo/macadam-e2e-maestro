@@ -1,0 +1,72 @@
+# tags: regression, profile
+# qase: MACADAM-304
+#
+# What: Settings screen opens from Profile and shows key sections.
+# Why:  Regression for settings navigation and layout.
+#
+# Run: ./scripts/run-open-settings-test.sh
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/login-with-mock.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- runFlow:
+    file: ../subflows/open-profile-from-tab.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- runFlow:
+    file: ../subflows/open-settings-from-profile.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- assertVisible:
+    id: settings.user.title
+
+- assertVisible:
+    id: settings.friends.title
+
+- scrollUntilVisible:
+    element:
+      id: settings.preferences.title
+    direction: DOWN
+    timeout: 20000
+
+- assertVisible:
+    id: settings.preferences.title
+
+- scrollUntilVisible:
+    element:
+      id: settings.support.title
+    direction: DOWN
+    timeout: 20000
+
+- assertVisible:
+    id: settings.support.title
+
+- scrollUntilVisible:
+    element: "Log Out"
+    direction: DOWN
+    timeout: 20000
+
+- assertVisible: "Log Out"
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - scrollUntilVisible:
+          element:
+            id: settings.button.pedometerSource
+          direction: DOWN
+          timeout: 20000
+      - assertVisible:
+          id: settings.button.pedometerSource

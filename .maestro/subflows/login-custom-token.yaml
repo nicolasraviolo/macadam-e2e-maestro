@@ -1,0 +1,30 @@
+# Reusable login via Firebase custom token (fixed test user).
+#
+# BLOCKED until:
+#   - BE: POST /users/e2e/custom-token
+#   - App: macadam.beta://e2e-auth?token=...
+#
+# Run (once unblocked):
+#   maestro test -e MAESTRO_E2E_SECRET=... -e MAESTRO_EMAIL=... .maestro/subflows/login-custom-token.yaml
+
+appId: ${APP_ID}
+env:
+  APP_ID: com.macadamapp.beta
+---
+- launchApp:
+    clearState: true
+    # iOS-only: wipe the Keychain so the Firebase auth token doesn't survive.
+    clearKeychain: true
+
+- runScript:
+    file: ../scripts/fetch-custom-token.js
+
+# BLOCKED: remove comment when app deep link handler is live
+- openLink:
+    link: ${output.authDeepLink}
+    autoVerify: true
+
+# TODO: replace with stable testID when app team adds one on home tab
+- extendedWaitUntil:
+    visible: "Walk more every day"
+    timeout: 30000

@@ -1,0 +1,37 @@
+# tags: regression, profile
+# qase: MACADAM-301
+#
+# What: Completed profile shows user info and awards section.
+# Why:  View-only regression (edit flow is profile/edit-profile.yaml).
+#
+# Run: ./scripts/run-view-profile-test.sh
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/login-with-mock.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- runFlow:
+    file: ../subflows/open-profile-from-tab.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- assertVisible: "E2E"
+
+- assertVisible: "@e2euser"
+
+# Collectibles (profile.awards) only render when the user has stickers — mock user has none.
+# Highlights always loads once the public profile API responds.
+- scrollUntilVisible:
+    element: "Highlights"
+    direction: DOWN
+    timeout: 20000
+
+- assertVisible: "Highlights"

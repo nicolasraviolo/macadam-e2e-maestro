@@ -1,0 +1,16 @@
+# tags: smoke
+#
+# What: Android — app opens on the welcome screen.
+# Why:  Confirms emulator + build + Maestro are wired before deeper flows.
+#
+# Run: ./scripts/run-android-tests.sh  (smoke suite)
+
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+
+- extendedWaitUntil:
+    visible: "Get started"
+    timeout: 40000
+- assertVisible: "(?i)walk more every day"

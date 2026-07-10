@@ -1,0 +1,53 @@
+# Finish Android health sync when Google Fit OAuth cannot complete (emulator).
+# Retries provider Continue → OAuth dismiss → Fit error "Later" until the modal appears.
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+- repeat:
+    times: 8
+    commands:
+      - runFlow:
+          when:
+            visible:
+              id: healthSync.providerPermission.title
+          commands:
+            - tapOn: "Continue"
+
+      - runFlow:
+          file: dismiss-google-fit-auth-if-needed.yaml
+          env:
+            APP_ID: ${APP_ID}
+
+      - runFlow:
+          when:
+            visible: "Try again"
+          commands:
+            - tapOn: "Later"
+
+      - runScript:
+          file: ../scripts/wait-for-config.js
+          env:
+            wait_seconds: "3"
+
+# Analysing screen auto-advances (~5s) when Fit connects partially
+- runFlow:
+    when:
+      visible: "All good!"
+    commands:
+      - runScript:
+          file: ../scripts/wait-for-config.js
+          env:
+            wait_seconds: "8"
+
+- repeat:
+    times: 5
+    while:
+      visible: "I don't want to count my steps"
+    commands:
+      - tapOn: "I don't want to count my steps"
+      - runScript:
+          file: ../scripts/wait-for-config.js
+          env:
+            wait_seconds: "3"

@@ -1,0 +1,10 @@
+# iOS only — call immediately after launchApp (before any assert or tap).
+# A short no-op swipe lets the XCTest accessibility tree settle after cold start.
+# Without this, Maestro often hits kAXErrorInvalidUIElement on the first poll.
+# See docs/testing-guide.md — "iOS driver stability".
+
+appId: ${APP_ID}
+---
+- swipe:
+    direction: DOWN
+    duration: 100

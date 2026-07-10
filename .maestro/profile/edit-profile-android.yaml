@@ -1,0 +1,29 @@
+# tags: profile, auth, regression
+#
+# What: Android — login → profile → edit → save → verify.
+# Run: ./scripts/run-profile-edit-test.sh
+
+appId: ${APP_ID}
+---
+- runScript:
+    file: ../scripts/api/healthCheck.js
+
+- runFlow:
+    file: ../subflows/login-with-mock-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
+      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+
+- runFlow:
+    file: ../subflows/open-profile-from-tab.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- assertVisible: "E2E"
+- assertVisible: "@e2euser"
+
+- runFlow:
+    file: ../subflows/profile-edit-fields-android.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
