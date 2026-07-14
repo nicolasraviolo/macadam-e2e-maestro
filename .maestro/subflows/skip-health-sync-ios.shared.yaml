@@ -1,0 +1,45 @@
+# Skip iOS health sync — deny HealthKit then tap "I don't want to count my steps".
+# Does NOT validate HealthKit connection; lands on product-tour welcome.
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+- extendedWaitUntil:
+    visible:
+      id: healthSync.providerPermission.title
+    timeout: 30000
+
+- tapOn: "Continue"
+
+# Native HealthKit sheet — deny so the app shows the skip/help screen
+- tapOn:
+    text: "Don't Allow"
+    optional: true
+
+- tapOn:
+    text: "Turn On All"
+    optional: true
+
+- tapOn:
+    text: "Don't Allow"
+    optional: true
+
+- repeat:
+    times: 20
+    while:
+      notVisible:
+        id: onboarding-home-step-1
+    commands:
+      - tapOn:
+          text: "I don't want to count my steps"
+          optional: true
+
+      - tapOn:
+          id: button.common.lets.go.button
+          optional: true
+
+      - runScript:
+          file: ../scripts/wait-for-config.js
+          env:
+            wait_seconds: "2"

@@ -29,7 +29,6 @@ env:
     permissions:
       all: deny
       notifications: allow
-      android.permission.ACTIVITY_RECOGNITION: allow
     arguments:
       flags: '{"onb_track_notifications_enabled":true,"pre_signup_enabled":true,"personalization_enabled":true,"magic_link_enabled":false,"onboarding_cmp_after_att":false,"referral_onboarding_enabled":true,"is_slomo_xp_enabled":true,"product_tour_enabled":true}'
 

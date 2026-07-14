@@ -217,10 +217,13 @@ tests must not assume a previous session.
 | `signup-presignup.shared.yaml` | Welcome → personalization → sign-up email screen only |
 | `signup-credentials.shared.yaml` | Enter email + password on Signup / ChoosePassword screens |
 | `signup-onboarding-with-mock.yaml` | Sign-up with `referral_onboarding_enabled: true` |
-| `onboarding-after-signup.shared.yaml` | Referral → health sync (per OS) → product tour → submit steps |
+| `onboarding-after-signup.shared.yaml` | Referral → **skip** health sync → product tour → real Home |
 | `onboarding-after-signup-probe.shared.yaml` | Referral → first health screen only (fast) |
-| `onboarding-health-android.shared.yaml` | Android health sync: activity recognition + Google Fit |
-| `onboarding-health-ios.shared.yaml` | iOS health sync: HealthKit provider (needs verification) |
+| `skip-health-sync-android.shared.yaml` | Android: exit health sync via Later / deny steps |
+| `skip-health-sync-ios.shared.yaml` | iOS: deny HealthKit, tap skip on permission help |
+| `onboarding-product-tour.shared.yaml` | Product tour steps 1–4 → real Home |
+| `onboarding-health-android.shared.yaml` | Full Android health sync (Google Fit) — dedicated test only |
+| `onboarding-health-ios.shared.yaml` | Full iOS health sync (HealthKit) — dedicated test only |
 | `open-profile-from-tab.shared.yaml` | Tap tab-bar avatar → profile Overview |
 | `profile-edit-fields.shared.yaml` | Open edit form, change fields, save, assert |
 | `dismiss-google-fit-auth-if-needed.yaml` | Cancel Google OAuth WebView on emulator (SKIP → back) |
@@ -297,6 +300,13 @@ The flows run on both platforms. Keep these in mind when writing new ones:
 - **Platform-specific steps** use Maestro's `when: platform: Android|iOS`. Health sync is
   split into `onboarding-health-android.shared.yaml` (Google Fit) and
   `onboarding-health-ios.shared.yaml` (HealthKit).
+- **Skipping health sync in product-tour tests:** `signup-onboarding-to-home.yaml` does
+  **not** test Google Fit / HealthKit. It uses `skip-health-sync-*.shared.yaml`, which taps
+  the app's built-in exits — **Later** on the Fit error modal, or **I don't want to count my
+  steps** on the permission-help screen. The full health path stays in
+  `onboarding-health-*.shared.yaml` for a future dedicated flow.
+- **TODO (app team):** an E2E launch flag (e.g. `health_sync_onboarding_enabled: false`)
+  would skip health screens entirely on emulator — cleaner than tapping through skip UI.
 - **No `adb reverse` on iOS.** The simulator reaches `localhost:4010` / `:8081` directly.
   Android needs the reverse tunnels (`run-*.sh` do it).
 

@@ -17,8 +17,8 @@ appId: ${APP_ID}
     file: ../subflows/signup-with-mock.yaml
     env:
       APP_ID: ${APP_ID}
-      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
       MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+      FORCE_FRESH_ACCOUNT: ${FORCE_FRESH_ACCOUNT}
 
 # Account created — no longer on sign-up email or password screens
 - extendedWaitUntil:
