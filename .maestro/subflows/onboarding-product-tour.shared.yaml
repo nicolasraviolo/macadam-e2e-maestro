@@ -1,0 +1,74 @@
+# Product tour welcome → full tour (steps 1–4) → real Home.
+# Prerequisites: health sync finished or skipped (welcome CTA visible).
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+- tapOn:
+    id: button.common.lets.go.button
+
+- extendedWaitUntil:
+    visible:
+      id: onboarding-home-step-1
+    timeout: 60000
+
+- assertVisible:
+    id: onboarding-home-step-1
+
+- tapOn:
+    id: button.common.label.next
+
+- extendedWaitUntil:
+    visible:
+      id: onboarding-home-step-2
+    timeout: 20000
+
+- assertVisible:
+    id: onboarding-home-step-2
+
+- assertVisible:
+    id: home.tabBar.home
+
+- swipe:
+    from:
+      id: onboarding-home-step-2
+    direction: RIGHT
+
+- runFlow:
+    file: dismiss-success-slider-if-needed.shared.yaml
+    env:
+      APP_ID: ${APP_ID}
+
+- extendedWaitUntil:
+    visible:
+      id: onboarding-home-step-3
+    timeout: 30000
+
+- assertVisible:
+    id: onboarding-home-step-3
+
+- tapOn:
+    id: button.common.label.next
+
+- extendedWaitUntil:
+    visible:
+      id: onboarding-home-step-4
+    timeout: 20000
+
+- assertVisible:
+    id: onboarding-home-step-4
+
+- tapOn: "Got it"
+
+- extendedWaitUntil:
+    visible: "(?i).*step count for today.*"
+    timeout: 30000
+
+- tapOn:
+    id: button.common.lets.go.button
+
+- extendedWaitUntil:
+    visible:
+      id: button_user_picture
+    timeout: 45000

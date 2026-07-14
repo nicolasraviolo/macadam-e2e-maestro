@@ -1,9 +1,10 @@
-# Post sign-up onboarding: referral → health sync → product tour → submit steps.
+# Post sign-up onboarding: referral → skip health sync → product tour → real Home.
 #
-# Cross-platform: health sync differs per OS (Android = Google Fit, iOS = HealthKit),
-# so that part is delegated to platform-specific subflows below.
+# Health sync is skipped (not under test here). The app exposes built-in skip paths:
+#   Android — "Later" on Google Fit error, or "I don't want to count my steps"
+#   iOS     — deny HealthKit, then "I don't want to count my steps"
 #
-# Use testIDs for titles — accent headings render UPPERCASE on screen (text match fails).
+# For a full health-sync journey, use onboarding-health-*.shared.yaml in a dedicated flow.
 
 appId: ${APP_ID}
 env:
@@ -24,111 +25,23 @@ env:
 - tapOn:
     id: button.referral.onboarding.submit.secondarybutton
 
-# --- Health sync (platform-specific) ---
+# --- Skip health sync (platform-specific) ---
 - runFlow:
     when:
       platform: Android
-    file: onboarding-health-android.shared.yaml
+    file: skip-health-sync-android.shared.yaml
     env:
       APP_ID: ${APP_ID}
 
 - runFlow:
     when:
       platform: iOS
-    file: onboarding-health-ios.shared.yaml
+    file: skip-health-sync-ios.shared.yaml
     env:
       APP_ID: ${APP_ID}
 
-# --- Product tour welcome (both platforms) ---
-# Poll until product-tour Home — tap welcome CTA when it appears (typewriter delay on emulator).
-- repeat:
-    times: 40
-    while:
-      notVisible:
-        id: onboarding-home-step-1
-    commands:
-      - tapOn:
-          id: button.common.lets.go.button
-          optional: true
-
-      - tapOn:
-          text: "Later"
-          optional: true
-
-      - tapOn:
-          text: "I don't want to count my steps"
-          optional: true
-
-      - runScript:
-          file: ../scripts/wait-for-config.js
-          env:
-            wait_seconds: "3"
-
-- extendedWaitUntil:
-    visible:
-      id: onboarding-home-step-1
-    timeout: 90000
-
-- assertVisible:
-    id: onboarding-home-step-1
-
-- tapOn:
-    id: button.common.label.next
-
-- extendedWaitUntil:
-    visible:
-      id: onboarding-home-step-2
-    timeout: 20000
-
-- assertVisible:
-    id: onboarding-home-step-2
-
-# Bottom navigation (fake tab bar on product-tour home)
-- assertVisible:
-    id: home.tabBar.home
-
-# Swipe the submit-steps slider (welcome bonus on product tour)
-- swipe:
-    from:
-      id: onboarding-home-step-2
-    direction: RIGHT
-
+# --- Product tour → real Home ---
 - runFlow:
-    file: dismiss-success-slider-if-needed.shared.yaml
+    file: onboarding-product-tour.shared.yaml
     env:
       APP_ID: ${APP_ID}
-
-# --- Product tour continues: wallet + spend tabs ---
-- extendedWaitUntil:
-    visible:
-      id: onboarding-home-step-3
-    timeout: 30000
-
-- assertVisible:
-    id: onboarding-home-step-3
-
-- tapOn:
-    id: button.common.label.next
-
-- extendedWaitUntil:
-    visible:
-      id: onboarding-home-step-4
-    timeout: 20000
-
-- assertVisible:
-    id: onboarding-home-step-4
-
-- tapOn: "Got it"
-
-# --- End product tour → real Home ---
-- extendedWaitUntil:
-    visible: "(?i).*step count for today.*"
-    timeout: 30000
-
-- tapOn:
-    id: button.common.lets.go.button
-
-- extendedWaitUntil:
-    visible:
-      id: button_user_picture
-    timeout: 45000

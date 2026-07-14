@@ -8,15 +8,8 @@
 appId: ${APP_ID}
 env:
   APP_ID: ${APP_ID}
-  MAESTRO_EMAIL: ${MAESTRO_EMAIL}
   MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
 ---
-- runScript:
-    file: ../scripts/generate-test-account.js
-    env:
-      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
-      MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
-
 - runScript:
     file: ../scripts/api/resetScenario.js
 
@@ -62,5 +55,5 @@ env:
     file: signup-credentials.shared.yaml
     env:
       APP_ID: ${APP_ID}
-      MAESTRO_EMAIL: ${MAESTRO_EMAIL}
       MAESTRO_PASSWORD: ${MAESTRO_PASSWORD}
+      FORCE_FRESH_ACCOUNT: ${FORCE_FRESH_ACCOUNT}

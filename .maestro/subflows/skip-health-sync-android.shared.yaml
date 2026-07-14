@@ -1,0 +1,83 @@
+# Skip Android health sync — uses the app's built-in exit paths (Later / deny steps).
+# Does NOT validate Google Fit connection; lands on product-tour welcome.
+#
+# Strategy: do not grant activity recognition → after provider Continue the app shows
+# permission help or the Fit error modal, both with a skip/Later action.
+
+appId: ${APP_ID}
+env:
+  APP_ID: ${APP_ID}
+---
+# --- Activity recognition intro — continue without granting ---
+- extendedWaitUntil:
+    visible:
+      id: healthSync.activityPermission.title
+    timeout: 30000
+
+- tapOn:
+    id: button.common.button.continue
+
+# Intentionally skip permission_allow_button
+
+# --- Health provider (Google Fit) ---
+- extendedWaitUntil:
+    visible:
+      id: healthSync.providerPermission.title
+    timeout: 30000
+
+- tapOn: "Continue"
+
+- tapOn:
+    id: account_name
+    optional: true
+
+# Dismiss OAuth WebView if it opens (emulator cannot complete Fit login)
+- tapOn:
+    text: "SKIP"
+    optional: true
+
+- back
+
+# Poll until product-tour welcome — tap through skip UI as it appears
+- repeat:
+    times: 25
+    while:
+      notVisible:
+        id: button.common.lets.go.button
+    commands:
+      - runFlow:
+          when:
+            visible:
+              id: healthSync.googleError.popup.title
+          commands:
+            - tapOn: "Later"
+
+      - runFlow:
+          when:
+            visible:
+              id: healthSync.permissionHelp.title
+          commands:
+            - tapOn: "I don't want to count my steps"
+
+      - runFlow:
+          when:
+            visible:
+              id: healthSync.providerPermission.title
+          commands:
+            - tapOn: "Continue"
+
+      - tapOn:
+          text: "SKIP"
+          optional: true
+
+      - back
+
+      - runScript:
+          file: ../scripts/wait-for-config.js
+          env:
+            wait_seconds: "2"
+
+- extendedWaitUntil:
+    visible:
+      id: button.common.lets.go.button
+    timeout: 90000

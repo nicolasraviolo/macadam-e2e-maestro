@@ -43,21 +43,22 @@ env:
       platform: iOS
     commands:
       - extendedWaitUntil:
-          visible: "(?i).*your first name.*"
+          visible:
+            id: textfield.onboarding.personalization.username.field.label
           timeout: 15000
+      - tapOn:
+          id: textfield.onboarding.personalization.username.field.label
       - inputText: "E2EUser"
-      - pressKey: Enter
-      - repeat:
-          times: 20
-          while:
-            notVisible: "Confirm"
-          commands:
-            - pressKey: Enter
-            - runScript:
-                file: ../scripts/wait-for-config.js
-                env:
-                  wait_seconds: "1"
-      - tapOn: "Confirm"
+      - tapOn:
+          point: "50%, 25%"
+      - tapOn:
+          id: button.onboarding.personalization.username.button.label
+      - extendedWaitUntil:
+          visible:
+            id: button.common.button.confirm
+          timeout: 30000
+      - tapOn:
+          id: button.common.button.confirm
 
 # Country slide — Android only (iOS handled above with visible text).
 - runFlow:
